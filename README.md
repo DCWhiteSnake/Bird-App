@@ -3,8 +3,8 @@ This is a twitter like social media web app.
 ## Tooling
 - MySQL (V8+)
   + You need to create a MYSQL database with the name bird_app_db
-  + For the queries used to create the db see [queries](https://github.com/dcwhitesnake/bird-app/queries.sql "SQL queries")
-  + The database, for the ER diagram see [ER diagrams](https://github.com/dcwhitesnake/bird-app/EntityDiagrams.png "Entity relationship diagrams").
+  + For the queries used to create the db see [queries](https://github.com/DCWhiteSnake/Bird-App/blob/main/queries.sql "SQL queries")
+  + The database, for the ER diagram see [ER diagrams](https://github.com/DCWhiteSnake/Bird-App/blob/main/EntityDiagrams.png "Entity relationship diagrams").
 - Django - The backend
 - Socket.io - For a persistent communication channel between the client and server.
 - Node.js - The front-end

@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "run-server": "^1.0.6",
+    "socket.io-client": "^4.6.1"
+  }
+}

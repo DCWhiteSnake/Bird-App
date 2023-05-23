@@ -12,3 +12,13 @@ This is a twitter like social media web app.
 
 ## Features Documentation
 [features docs](https://docs.google.com/document/d/1RQ72CZiRPJc57sB8Fo55bvQZwyeNnT3A826h4QdkBfc/edit?usp=sharing "Features to be implemented")
+
+## Steps to test locally
+### Automatic
+./run-server
+
+Manual
++ Create your own venv then install the required modules à la **pip install -r requirements.txt**
++ Create an environment variable SIO_SECRET with any value you like via **export SIO_SECRET=some_super_secret_key**
++ Run the websocket-server/api-server with **gunicorn --thread 50 app:app**. You can't use the flask run command as Websocket support is not available for the Werkzeug server, the default flask server.
++ You're good to go, 

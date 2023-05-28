@@ -1,17 +1,18 @@
 CREATE TABLE users(
-    id VARCHAR(36) NOT NULL,
-    email TEXT NOT NULL, 
-    username TEXT NOT NULL,
-    phone_no TEXT,
-    password_hash TEXT NOT NULL,
-    profile_photo TEXT,
-    cash DECIMAL DEFAULT 0,
-    follower_count INT DEFAULT 0,
-    confirmed TINYINT(1),
-    creation_date DATETIME
-    PRIMARY KEY  (id)
+  id varchar(36) NOT NULL,
+  email text NOT NULL,
+  username text NOT NULL,
+  phone_no text,
+  password_hash text NOT NULL,
+  profile_photo text,
+  cash decimal(10,0) DEFAULT 0,
+  follower_count int DEFAULT 0,
+  confirmed tinyint(1) DEFAULT NULL,
+  creation_date datetime DEFAULT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY unique_email (email(255)),
+  UNIQUE KEY unique_username (username(255))
 );
-
 CREATE TABLE tweets(
     id VARCHAR(36) NOT NULL,
     sender_id VARCHAR(36) NOT NULL,

@@ -7,14 +7,18 @@ This is a twitter like social media web app.
   + The database, for the ER diagram see [ER diagrams](https://github.com/DCWhiteSnake/Bird-App/blob/main/EntityDiagrams.png "Entity relationship diagrams").
 - Flask - The backend
 - Socket.io - For a persistent communication channel between the client and server. Socket.io is an extension of Websockets technology
+- Gunicorn - Reverse proxy
+- Eventlet - Worker
 - js - The front-end
 - Bootstrap - For styling similar to twitter's UI.
+- Python 3.9.16
 
 ## Features Documentation
 [features docs](https://docs.google.com/document/d/1RQ72CZiRPJc57sB8Fo55bvQZwyeNnT3A826h4QdkBfc/edit?usp=sharing "Features to be implemented")
 
 ## Steps to test locally
 ### Automatic
+- create a database called bird_app_db
 - chmod u+x *.sh && ./run-server.sh
 - remember to inspect the shell scripts for malicious code.
 
@@ -28,3 +32,7 @@ This is a twitter like social media web app.
 - For the frontend server
   + cd into the frontend folder and just run **http-server**
 - You are good to go.
+
+
+#Note
+If using WSL, it must be version if not gevent won't run correctly. You can check the version via **wsl -l -v** in a powershell terminal.

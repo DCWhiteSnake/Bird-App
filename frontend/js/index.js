@@ -10,6 +10,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (value) {
             setUsername();
+
+            // After we are sure that the login is succesful then start communication with the server
+            const socket = io("http://localhost:5000");
+            socket.on('server-client', msg => {
+              console.log("Server: " + msg);
+              jwt = localStorage.getItem("jwt");
+              socket.emit("x-access-token", jwt);
+              console.log("Client: {token}");
+              });
+            socket.on('username', msg => {
+              console.log("Server: " + msg);
+            });
         }
         else {
             localStorage.setItem("jwt", null);

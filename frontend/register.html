@@ -20,29 +20,43 @@
     <script src="js/routes.js"></script>
     <script src="js/authhelpers.js"></script>
     <script src="js/auth.js"></script>
-    <title>login</title>
+    <title>Register</title>
 </head>
 
 <body>
     <div class="container mt-5">
       <div class="row justify-content-center">
-        <div class="col-md-6">
-          <h2 class="mb-4">Login</h2>
-          <form id="login_form">
+          <h2 class="mb-4">Register</h2>
+          <form id="registration_form">
             <div class="mb-3">
-              <label for="email" class="form-label">Email/Username/Phone Number</label>
-              <input type="text" class="form-control" id="email" name="email" required>
+                <p id="general_error"></p>
             </div>
             <div class="mb-3">
-              <label for="password" class="form-label">Password</label>
+              <label for="email" class="form-label">Email <span style="color:red;">*</span></label>
+              <input type="email" class="form-control" id="email" name="email" required>
+              <p id="email_error" style='display:none;color:red;'>You already have an account.</p>
+            </div>
+            <div class="mb-3">
+              <label for="username" class="form-label">Username <span style="color:red;">*</span></label>
+              <input type="text" class="form-control" id="username" name="username" required>
+              <p id="username_error" style='display:none;color:red;'>Username is unavailable</p>
+            </div>
+            <div class="mb-3">
+              <label for="password" class="form-label">Password <span style="color:red;">*</span></label>
               <input type="password" class="form-control" id="password" name="password" required>
             </div>
-            <button type="submit" class="btn btn-primary">Login</button>
+            <div class="mb-3">
+              <label for="confirmation" class="form-label">Password Confirmation <span style="color:red;">*</span></label>
+              <input type="password" class="form-control" id="confirmation" name="confirmation" required>
+              <p id="confirmation_error" style="display:none;">The passwords don't match</p>
+            </div>
+            <div class="mb-3">
+              <label for="phone_no" class="form-label">Phone Number <span style="color:red;">*</span></label>
+              <input type="tel" class="form-control" id="phone_no" name="phone_no" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Register</button>
           </form>
-          <div>
-            <h3>Don't have an account?</h3>
-            <a class="btn btn-info mb-3" href="register.html">Register</a>
-          </div>
+          <p>Everthing marked with <span style="color:red;">*</span> is required</p>
         </div>
       </div>
     </div>

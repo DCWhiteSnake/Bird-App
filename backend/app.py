@@ -28,6 +28,10 @@ email_regex = re.compile(
 
 def authenticate(email, password):
     users = db.execute("SELECT * FROM users WHERE email = ?", email)
+    if not users:
+        users = db.execute("SELECT * FROM users WHERE username = ?", email)
+    if not users:
+        users = db.execute("SELECT * FROM users WHERE phone_no = ?", email)
     if len(users) == 1:
         user = users[0]
         user_object = User.create_user(user)
@@ -75,8 +79,10 @@ def username(current_user):
 @app.route("/api/login", methods=["POST"])
 def login():
     email = request.form.get("email")
-    if not email_is_valid(email):
-        return jsonify({"WWW-Authenticate": f'Basic realm = "{email}" is not a valid email address'})
+    # if not email_is_valid(email):
+    #     return jsonify({"WWW-Authenticate": f'Basic realm = "{email}" is not a valid email address'})
+    if not email:
+        return jsonify({"WWW-Authenticate": f'Basic realm = "{email}" is required'})
     password = request.form.get("password")
     if not password:
         return jsonify({"WWW-Authenticate": 'Basic realm = password cannot be null'})
@@ -96,12 +102,10 @@ def register():
     Use this route to register a new user on our amazing bird-app
     """
     email = request.form.get("email")
+    username= request.form.get("username")
+    phone_no = request.form.get("phone_no")
     if not email_is_valid(email):
-        return jsonify({"WWW-Authenticate": f'"{email}" is not a valid email address'})
-    user_with_email = db.execute('SELECT id FROM db WHERE email = ?', email)[0]
-    if user_with_email:
-        return make_response('This email is already taken', 202)
-
+        return jsonify({"WWW-Authenticate": f'"{email}" is not a valid email address'})  
     password = request.form.get("password")
     if not password:
         return jsonify({"WWW-Authenticate": 'password cannot be null'})
@@ -111,12 +115,9 @@ def register():
 
     username = request.form.get("username")
     if not username:
-        return jsonify({"WWW-Authenticate": 'you must supply a password'})
-    user_with_username = db.execute(
-        'SELECT id FROM db WHERE username = ?', username)[0]
-    if user_with_username:
-        return make_response('Sorry this username is unavailable', 202)
-
+        return jsonify({"WWW-Authenticate": 'you must supply a username'})
+    if not phone_no:
+        return jsonify({"WWW-Authenticate": 'you must supply a phone_no'})
     id = uuid.uuid4().__str__()
     hash = generate_password_hash(password)
     # format creation date like MYSQL 'YYYY-MM-DD hh:mm:ss' format
@@ -124,12 +125,12 @@ def register():
     date = creation_date[0]
     time = creation_date[1].split(".")[0]
     try:
-        _ = db.execute("INSERT INTO users(id, email, username, password_hash, creation_date, confirmed) VALUES(?,?,?,?,?,?)", id, email, username, hash,
-                       str(date)+" "+str(time), 1)
+        _ = db.execute("INSERT INTO users(id, email, username, password_hash, creation_date, confirmed, phone_no) VALUES(?,?,?,?,?,?,?)", id, email, username, hash,
+                       date+" "+time, 0, phone_no)
         return make_response('Account created successfully', 201)
     except Exception as e:
         print(e)
-        return make_response(jsonify({'WWW-Authenticate': 'Bad request'}), 404)
+        return make_response(jsonify({'WWW-Authenticate': str(e).split(',')[1]}), 400)
 
 
 def email_is_valid(email):

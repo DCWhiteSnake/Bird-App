@@ -3,10 +3,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (jwt == null) {
         setTimeout(() => {
             window.location.href = loginAddress;
-        }, 3000)
+            alert("You are not signed in, redirecting to login page");
+        }, 3000);
     }
     else {
-        value = await isAuthenticated(jwt)
+        value = await isAuthenticated(jwt);
 
         if (value) {
             setUsername();
@@ -21,6 +22,11 @@ document.addEventListener("DOMContentLoaded", async () => {
               });
             socket.on('username', msg => {
               console.log("Server: " + msg);
+            });
+            socket.emit('get_tweets', {"jwt": jwt});
+            socket.on('tweets', msg => {
+                console.log(msg);
+                document.querySelector("#fun_tweets").textContent = msg;
             });
         }
         else {

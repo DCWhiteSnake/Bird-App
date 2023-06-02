@@ -1,5 +1,5 @@
 class User(object):
-    # Describes  a details of this application
+    # Describes  a user_row of this application
     def __init__(self, id, email, username, phone_no, password_hash, creation_date, follower_count, confirmed, profile_photo, cash):
         self.id = id
         self.email = email
@@ -14,8 +14,9 @@ class User(object):
 
     def __str__(self) -> str:
         return f"User(id={self.id})"
-    #Create a user given details from db
-    def create_user(details):
-        return User(id = details["id"], username=details["username"], phone_no=details["phone_no"], email = details["email"],
-                             password_hash = details["password_hash"], profile_photo=details["profile_photo"], cash=details["cash"],
-                             follower_count=details["follower_count"], creation_date=details["creation_date"], confirmed=details["confirmed"])
+    
+    def create_user(user_row):
+        '''Create a user object given kvp(user_row) from db'''
+        return User(id = user_row["id"], username=user_row["username"], phone_no=user_row["phone_no"], email = user_row["email"],
+                             password_hash = user_row["password_hash"], profile_photo=user_row["profile_photo"], cash=user_row["cash"],
+                             follower_count=user_row["follower_count"], creation_date=user_row["creation_date"], confirmed=user_row["confirmed"])

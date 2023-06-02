@@ -62,9 +62,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                         throw new Error('Request failed')
                     }
                 })
-                .then(responseData => {
+                .then(responseData => {   
                     localStorage.setItem('jwt', responseData.token);
-                    window.location.href = homeAddress
+                    window.location.href = homeAddress;
                 })
                 .catch(error => {
                     console.error('Error:', error);

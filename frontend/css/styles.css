@@ -1,0 +1,72 @@
+html{
+    font-family: "PT Sans";
+    font-size: 16px;
+    box-sizing: border-box;
+}
+.body{
+    max-width:1500px;
+}
+.hidden{
+    display: none;
+}
+#sidebar_menu, .main_content_article{
+    overflow-y: scroll;
+     height:100vh;
+}
+.side{
+    background-color: black;
+}
+.side a{
+    text-decoration: none;
+    color: inherit;
+}
+.side a:hover, .side a:visited{
+    color: default;
+}
+.h1-side a, .h1-side{
+    font-size:2.5rem;
+    font-weight: bold;
+
+}
+.h2-side a, .h2-side{
+    font-size: 1.25rem;
+    font-weight: normal;
+}
+#weeks span{
+    color: #ffffff80;
+}
+#x_menu_btn{
+    display: none;
+}
+.emoji{
+    width: 20px;
+    height: 2opx;
+}
+.table_div, .nav_buttons_div{
+    margin-top: 10px;
+}
+#fast_box, #slow_box{
+    width: 1.5rem;
+    height: 1.5rem;
+    position:relative;
+    margin: 1rem;
+}
+#fast_box{
+    background-color: black;
+}
+#slow_box{
+    background-color: orange;
+}
+@media (max-width: 1007px)
+{
+    .small-12{
+        width: 100%;
+    }
+    #x_menu_btn{
+        display: block;
+    }
+    #sidebar_menu, .main_content_article{
+         height:auto;
+         overflow-y: hidden;
+    }
+}

@@ -26,7 +26,7 @@ def token_required(f):
             token = request.headers['x-access-token']
         # return 401 if token is not passed
         if not token:
-            return jsonify({'message' : 'Token is missing !!'}), 401
+            return jsonify({'message' : 'Token is missing !!'}, 401)
   
         try:
             # decoding the payload to fetch the stored details

@@ -90,3 +90,11 @@ CREATE TABLE notifications(
     PRIMARY KEY(id),
     FOREIGN KEY (receipient_id) REFERENCES users(id)
 );
+
+
+-- Get the user row if the user already follows B
+select l1.id from links JOIN users u1 on u1.username = 'dcwhitesnake' Join users u2 on u2.id = u1.id JOIN links l1 on l1.follower_id = '67f284e3-e548-48de-8a7b-e09948980291' AND l1.leader_id= u2.id;
+
+SELECT u1.id FROM users u1 WHERE  u1.username = 'dcwhitesnake';
+
+

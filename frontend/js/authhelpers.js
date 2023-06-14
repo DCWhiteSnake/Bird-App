@@ -1,29 +1,28 @@
-async function isAuthenticated(jwt) {
-    /**
-     * Check if the user making the request is authenticated.
-     * returns a promise that resolves to the username if authenticated
-     * and null if not authenticated
-     */
-    try {
-        const response = await fetch(challengeLoginRoute, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-access-token': jwt,
-                'Allow': '*'
-            }
-        });
-
-        if (response.ok) {
-            const responseData = await response.json();
-            const username = responseData.username;
-            console.log(username);
-            return username;
-        } else {
-            throw new Error("Something went wrong");
+/**
+ * Queries the backend server for the username of the jwt stored in 
+ * localStorage.
+ * @returns {Boolean} true if the jwt is valid 
+ * and false otherwise
+ */
+async function CheckIfJWTIsValid(jwt) {
+    const response = await
+        fetch(challengeLoginRoute, {method: "GET", headers:{
+            "x-access-token":jwt
+        }});
+    if (response.ok){
+        const jsonData = await response.json();
+        const message = jsonData.message;
+        console.log(message);
+        // do something with the message later.
+        if (jsonData.status == 401) {
+            // if we get a 401 - Unauthorized status message
+            // return false;
+            return false;
         }
-    } catch (error) {
-        console.log(error);
-        return null;
+        else{
+            return true;
+        }
     }
+    return false;
+
 }

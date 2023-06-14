@@ -19,8 +19,8 @@ This is a twitter like social media web app.
 ## Steps to test locally
 ### Automatic
 - create a database called bird_app_db
+- run the schema creation scripts in queries.sql
 - chmod u+x *.sh && ./run-server.sh
-- remember to inspect the shell scripts for malicious code.
 
 ### Manual
 - For backend server 
@@ -37,7 +37,8 @@ This is a twitter like social media web app.
 #Note
 If using WSL, it must be version if not gevent won't run correctly. You can check the version via **wsl -l -v** in a powershell terminal.
 
-#Note Update: 6-2-2023
+#Note 
+Update: 6-2-2023
 The current commit introduces some breaking changes specifically with the start_backend_server.sh script and the run_p.sh script. Below is a supplementary guide to running the app
 - export sql_pass="insert your sql password here" && export SIO_SECRET="secretstuff2"
 - export usr_name=$(whoami)
@@ -49,3 +50,9 @@ Functionality added:
  - Functionality to get tweets from people you follow (buggy)
  - Touch up the style and elements on the webapp
  - Backend flow to get tweets and then broadcast to followers.
+
+Update 6-12-2023
+- Old Tweets are now persisted to the browser's indexDb till you log out
+- You can run with the run-app.sh script again 😊
+- Added an architecture diagram [Architecture Diagram](https://github.com/DCWhiteSnake/Bird-App/blob/main/Architecture.png "Architecture diagram") to show a high-level idea of the app
+- Style is still meh.

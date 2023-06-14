@@ -20,14 +20,14 @@ function follow(event){
             }
         })
         .then(data => {
-            error_message = data["message"]["Follow Error"]
-            success_message = data ["message"]["Success"]
-            if (error_message){
+            errorMessage = data["message"]["FollowError"]
+            successMessage = data ["message"]["Success"]
+            if (errorMessage){
                 let u_div = document.createElement('div');
                 let u_p = document.createElement('p');
                 u_div.id = "unsuccessful_follow_div";
                 u_p.id = "unsuccessful_follow_p";
-                u_p.textContent = error_message;
+                u_p.textContent = errorMessage;
                 u_div.appendChild(u_p);
                 let follow_div = document.querySelector("#follow_div")   
                 follow_div.appendChild(u_div);
@@ -36,14 +36,14 @@ function follow(event){
                    u_div.style.display="none"; 
                 }, 3000);
             }
-            else if (success_message)
+            else if (successMessage)
             {
                 // display the successfully created message
                 let s_div = document.createElement('div');
                 let s_p = document.createElement('p');
                 s_div.id = "successful_follow_div";
                 s_p.id = "successful_follow_p";
-                s_p.textContent = success_message;
+                s_p.textContent = successMessage;
                 s_div.appendChild(s_p);
                 let follow_div = document.querySelector("#follow_div")   
                 follow_div.appendChild(s_div);

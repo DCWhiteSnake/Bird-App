@@ -1,3 +1,4 @@
+-- Schema creation Scripts
 CREATE TABLE users(
   id varchar(36) NOT NULL,
   email text NOT NULL,
@@ -91,10 +92,15 @@ CREATE TABLE notifications(
     FOREIGN KEY (receipient_id) REFERENCES users(id)
 );
 
-
+-- Playground scripts
+-- I used this to test my joins
 -- Get the user row if the user already follows B
 select l1.id from links JOIN users u1 on u1.username = 'dcwhitesnake' Join users u2 on u2.id = u1.id JOIN links l1 on l1.follower_id = '67f284e3-e548-48de-8a7b-e09948980291' AND l1.leader_id= u2.id;
 
 SELECT u1.id FROM users u1 WHERE  u1.username = 'dcwhitesnake';
 
+SELECT l1.follower_id, u1.username FROM links l1 JOIN users u1 ON u1.id = l1.follower_id AND l1.leader_id='67f284e3-e548-48de-8a7b-e09948980291';
 
+SELECT follower_id, u1.username as follower_name, u2.username  as leader_name FROM links l1 JOIN users u1 ON u1.id = l1.follower_id AND l1.leader_id='67f284e3-e548-48de-8a7b-e09948980291'  JOIN users u2 ON u2.id = l1.leader_id;
+
+"SELECT follower_id, u1.username as f_username, u2.username  as l_username FROM links l1 JOIN users u1 ON u1.id = l1.follower_id AND l1.leader_id=?  JOIN users u2 ON u2.id = l1.leader_id"

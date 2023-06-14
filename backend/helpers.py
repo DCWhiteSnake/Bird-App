@@ -6,7 +6,7 @@ from flask_cors import CORS
 import jwt
 from cs50 import SQL
 
-from user import User
+from models.user import User
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -36,9 +36,7 @@ def token_required(f):
             current_user =  User.create_user(user)
             
         except:
-            return make_response (jsonify({
-                'message' : 'Token is invalid !!'
-            }), 401)
+            return jsonify(message={'WWW-Authenticate':'Token is invalid !!'}, status = 401)
         # returns the current logged in users context to the routes
         return  f(current_user, *args, **kwargs) 
     return decorated

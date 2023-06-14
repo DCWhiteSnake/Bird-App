@@ -1,22 +1,18 @@
 # Using flask to make an api
 # import necessary libraries and functions
+import eventlet
+import eventlet.debug
+eventlet.monkey_patch()
+eventlet.debug.hub_prevent_multiple_readers(False)
 from flask import Flask, jsonify, request, make_response
-from flask_socketio import SocketIO, emit, disconnect
+from flask_socketio import SocketIO, emit, disconnect, socketio
 from flask_cors import CORS
 from cs50 import SQL
-from user import User
+from models.user import User
 from werkzeug.security import check_password_hash, generate_password_hash
-import uuid
-import os
 from datetime import datetime, timezone, timedelta
 from helpers import token_required
-import jwt
-import sys
-import pika
-import time
-import os
-import json
-import utilities
+import jwt, pika, os, json, utilities, uuid, logging
 
 # creating a Flask app
 app = Flask(__name__)
@@ -26,18 +22,14 @@ app.config['SECRET_KEY'] = os.environ.get('SIO_SECRET')
 whoami = os.environ.get('usr_name')
 sql_password = os.environ.get("sql_pass")
 db = SQL(f"mysql://{whoami}:{sql_password}@localhost:3306/bird_app_db")
-sio = SocketIO(app, cors_allowed_origins="*")
-
-# pika
-tweets = []
+mgr = socketio.KombuManager('amqp://')
+sio = SocketIO(app, cors_allowed_origins="*", client_manager=mgr, async_mode='eventlet')
+logging.getLogger("pika").setLevel(logging.WARNING)
+#  Setup
 connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
 channel = connection.channel()
 
-
-def callback(ch, method, properties, body):
-    tweets = jsonify(body.decode)
 # Auth
-
 
 def authenticate(email, password):
     users = db.execute("SELECT * FROM users WHERE email = ?", email)
@@ -61,7 +53,7 @@ def index(current_user):
 @app.route("/api/challenge_login", methods=["GET"])
 @token_required
 def challenge(current_user):
-    return jsonify({'username': current_user.username})
+    return jsonify({'username': current_user.username, "status": 200})
 
 
 @app.route("/api/username", methods=["GET"])
@@ -76,23 +68,22 @@ def login():
     # if not email_is_valid(email):
     #     return jsonify({"WWW-Authenticate": f'Basic realm = "{email}" is not a valid email address'})
     if not email:
-        return jsonify({"WWW-Authenticate": f'Basic realm = "{email}" is required'})
+        return jsonify(message={"WWW-Authenticate": 'Email is required'}, status=401)
     password = request.form.get("password")
     if not password:
-        return jsonify({"WWW-Authenticate": 'Basic realm = password cannot be null'})
+        return jsonify(message={"WWW-Authenticate": 'Password cannot be null'}, status=401)
     user = authenticate(email, password)
     if user:
         app.config['SECRET_KEY']
         token = jwt.encode({'public_id': user.id,
                             'exp': datetime.utcnow() + timedelta(hours=12)
                             }, app.config['SECRET_KEY'])
-        return make_response(jsonify({'token': token}), 201)
-    return make_response(jsonify({'WWW-Authenticate': 'Invalid username or password'}), 401)
+        return jsonify(message={"token": token, "username": user.username, "id": user.id}, status=200)
+    return jsonify(message={"WWW-Authenticate": 'Invalid username or password'}, status=401)
 
 
 @app.route("/api/register", methods=["POST"])
 def register():
-
     """
     Use this route to register a new user on our amazing bird-app
     """
@@ -127,52 +118,76 @@ def register():
     except Exception as e:
         print(e)
         return make_response(jsonify({'WWW-Authenticate': str(e).split(',')[1]}), 400)
-#end auth
+# end auth
 
 # tweet
+
+
 @app.route("/api/tweet", methods=["POST"])
 @token_required
-def create_tweet(current_user, body):
+def create_tweet(current_user):
 
+    # id = jwt.decode(request.headers['x-access-token'], app.config['SECRET_KEY'], algorithms=['HS256'])\
+    # ['public_id']
+    # mod_body = body
+    # print(mod_body)
+    jwt = request.headers["x-access-token"]
+    body = request.form.get('tweet')
+    if (len(body) == 0):
+        return jsonify(message={"TweetError": f"Bad Request"}, status=400) 
     id = current_user.id
+    t_id = str(uuid.uuid4())
+    
     tweet_id = db.execute("INSERT INTO tweets(id, sender_id, article, time)  VALUES(?,?,?,?)", t_id, id, body,
                           utilities.current_time())
-    follower_rows = db.execute(
-        "SELECT follower_id FROM links WHERE leader_id = ?", id)
-    if follower_rows.count > 0:
-        t_id = str(uuid.uuid4())
+    user_follower_list = db.execute(
+        "SELECT follower_id, u1.username as f_username, u2.username  as l_username FROM links l1 JOIN users u1\
+              ON u1.id = l1.follower_id AND l1.leader_id=? JOIN users u2 ON u2.id = l1.leader_id", id)
+    if len(user_follower_list) > 0:
         # Emit broadcast_tweet message to the tweet producer RabbitMQ server, this
         # tells the server to add the current tweet to the receiver_id node.
-        if tweet_id:
-            for follower in follower_rows:
-                sio.emit('broadcast_tweet', json.dumps(
-                    {"sender_id": id, "tweet": body, "receiver_id": follower}))
+        for follower_row in user_follower_list:
+            sio.emit('broadcast_tweet', json.dumps(\
+                {"tweet": [body, utilities.current_time(), t_id], "receiver_id": follower_row["follower_id"],
+                 "leader_username":  follower_row["l_username"]}))
+            sio.emit(f"new_tweet", follower_row["f_username"])
+    return jsonify(message={"Success": f"Tweet sent successfully"}, status=201)
+    
+
+
 @sio.on('get_tweets')
 def get_tweets(data):
     ''''''
+    def callback(ch, method, properties, body):
+    
+        tweets = f"{body.decode('utf-8')}"
+        # tweets = jsonify(tweets)
+        sio.emit(f"tweets", {"tweets":tweets, "token":receiver_id})
     if data["jwt"]:
         token = data["jwt"]
         token_data = jwt.decode(
             token, app.config['SECRET_KEY'], algorithms=['HS256'])
         receiver_id = token_data['public_id']
-        # channel.basic_qos(prefetch_count=1)
+        
+        connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+        channel = connection.channel()
+        if connection.is_closed:
+            connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+            channel = connection.channel()
+
         try:
+            channel.queue_declare(queue=receiver_id)
             channel.basic_consume(queue=receiver_id,
-                                auto_ack=True, on_message_callback=callback)
+                                      auto_ack=True,
+                                      on_message_callback=callback)
+        
             channel.start_consuming()
         except Exception as e:
-            e_message = str(e)
-            if "no queue" in e_message:
-                tweets.append("Nothing to display here, follow some people \
-                              to get their tweets")
-            
-        sio.emit("tweets", tweets)
-
-    else:
-        sio.emit("error", "Server error")
-#end tweet
+            print(e)
+# end tweet
 
 # Follow - Unfollow
+
 
 @app.route("/api/users/follow", methods=["POST"])
 @token_required
@@ -182,39 +197,37 @@ def followuser(current_user):
     # check if the user already follows 'username'
     # if so then just pass successful else create the link.
     if not username:
-        return jsonify(message = {"Follow Error": "username is required"},status=400)
+        return jsonify(message={"Follow Error": "username is required"}, status=400)
     elif username == current_user.username:
-        return jsonify(message = {"Follow Error": "You cannot follow yourself"},status=400)
-   
-    follower_row = db.execute(
-        "SELECT l1.id FROM links JOIN users u1 ON u1.username = ? JOIN users u2 ON u2.id = u1.id JOIN links l1 ON l1.follower_id = ? AND l1.leader_id = u2.id", username, id)
-    if id in follower_row:
-        return jsonify(message = {"Success": f"Successful followed @{username}"},status=201)
+        return jsonify(message={"Follow Error": "You cannot follow yourself"}, status=400)
+    # Check if user already follows
+    # if so, just send that the following was successful
+    follower_row = db.execute("SELECT l1.id FROM links \
+            JOIN users u1 ON u1.username = ? \
+            JOIN users u2 ON u2.id = u1.id \
+            JOIN links l1 ON l1.follower_id = ? AND l1.leader_id = u2.id", username, id)
+    if len(follower_row) == 1:
+        return jsonify(message={"Success": f"Successful followed @{username}"}, status=201)
     else:
         leader_id_rows = db.execute(
             "SELECT u1.id FROM users u1 WHERE u1.username = ?", username)
         if not leader_id_rows:
-            return jsonify(message = {"Follow Error": f"The user @{username} does not exist"},status=400)
-        l_id = leader_id_rows[0]
-
-        link_id = db.execute("INSERT INTO links(id, leader_id, follower_id, time)  VALUES(?,?,?,?)", str(
+            return jsonify(message={"FollowError": f"The user @{username} does not exist"}, status=400)
+        l_id = leader_id_rows[0]["id"]
+        _ = db.execute("INSERT INTO links(id, leader_id, follower_id, time)  VALUES(?,?,?,?)", str(
             uuid.uuid4), l_id, id, utilities.current_time())
-        if link_id:
-            return jsonify(message = {"Follow success": f"Successfully followed @{username}"},status=201)
-    return jsonify(message = {"Follow Error": "Bad Request"},status=400)
-#end follow
+        return jsonify(message={"Success": f"Successfully followed @{username}"}, status=201)
+# end follow
 
 # Sockets
 @sio.on('connect')
 def handle_connection():
     '''If the connection event is comming from the the Frontend client
-    then request for the JWT stored which will subsequently be validated in theh
+    then request for the JWT stored which will subsequently be validated in the
     x-access-token event
     '''
-    if request.remote_addr == "http://localhost:8080":
-        emit('server-client', f'Send access token')
-    print(f'Address: {request.remote_addr}\nMessage: Connection successful.')
- 
+    emit('server-client', f'Send access token')
+
 @sio.on('x-access-token')
 def handle_token(x_access_token):
 
@@ -222,16 +235,20 @@ def handle_token(x_access_token):
         data = jwt.decode(
             x_access_token, app.config['SECRET_KEY'], algorithms=['HS256'])
         public_id = data['public_id']
-        user = db.execute("SELECT * FROM users WHERE id = ?", public_id)[0]
-        current_user = User.create_user(user)
-        emit('username', f'Hello {current_user.username} from the server ')
-        emit('Web-Client-Connected', {'id': public_id})
+        try:
+            user = db.execute("SELECT * FROM users WHERE id = ?", public_id)[0]
+            current_user = User.create_user(user)
+            emit('username', f'Hello {current_user.username} from the server ')
+            emit('Web-Client-Connected', {'id': public_id})
+        except:
+            pass
+
     else:
         sio.emit('disconnect')
 
 
 @sio.on('disconnect')
 def handle_client_message():
-
-    print("client-disconnected")
-#end sockets
+    client_add = request.remote_addr  + ":" + str(request.environ['REMOTE_PORT'])
+    print(f"Client: {client_add} has disconnected disconnected")
+# end sockets

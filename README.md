@@ -35,9 +35,10 @@ This is a twitter like social media web app.
 
 
 #Note
-If using WSL, it must be version if not gevent won't run correctly. You can check the version via **wsl -l -v** in a powershell terminal.
+If using WSL, it must be version 2, if not gevent won't run correctly. You can check the version via **wsl -l -v** in a powershell terminal.
 
 #Note 
+
 Update: 6-2-2023
 The current commit introduces some breaking changes specifically with the start_backend_server.sh script and the run_p.sh script. Below is a supplementary guide to running the app
 - export sql_pass="insert your sql password here" && export SIO_SECRET="secretstuff2"

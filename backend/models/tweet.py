@@ -18,6 +18,6 @@ class tweet:
     def __str__(self) -> str:
         
         tweet_dict = {"tweet": self.tweet, "receiver_id": self.receiver_id, "leader_username": self.leader_username,
-                      "t_time" : self.t_time, "id": self.id}
+                      "t_time" : str(self.t_time), "id": self.id}
         tweet_json = json.dumps(tweet_dict)
         return (str(tweet_json))

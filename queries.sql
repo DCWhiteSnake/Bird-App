@@ -92,6 +92,27 @@ CREATE TABLE notifications(
     FOREIGN KEY (receipient_id) REFERENCES users(id)
 );
 
+ALTER TABLE users
+ADD bio varchar(255) DEFAULT "";
+
+ALTER TABLE users
+Add following_count int DEFAULT 0;
+
+
+
+CREATE TRIGGER increase_following_count_trigger
+AFTER INSERT ON links
+FOR EACH ROW
+UPDATE users
+SET following_count = following_count + 1
+WHERE id = NEW.follower_id;
+
+CREATE TRIGGER decrease_following_count_trigger
+AFTER DELETE ON links
+FOR EACH ROW
+UPDATE users
+SET following_count = following_count - 1
+WHERE id = OLD.follower_id;
 -- Playground scripts
 -- I used this to test my joins
 -- Get the user row if the user already follows B
@@ -103,4 +124,3 @@ SELECT l1.follower_id, u1.username FROM links l1 JOIN users u1 ON u1.id = l1.fol
 
 SELECT follower_id, u1.username as follower_name, u2.username  as leader_name FROM links l1 JOIN users u1 ON u1.id = l1.follower_id AND l1.leader_id='67f284e3-e548-48de-8a7b-e09948980291'  JOIN users u2 ON u2.id = l1.leader_id;
 
-"SELECT follower_id, u1.username as f_username, u2.username  as l_username FROM links l1 JOIN users u1 ON u1.id = l1.follower_id AND l1.leader_id=?  JOIN users u2 ON u2.id = l1.leader_id"

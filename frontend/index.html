@@ -35,7 +35,7 @@
 
     <title>Home</title>
     <link rel="stylesheet" href="css/styles.css">
-    </head>
+</head>
 
 <body>
     <div class="container">
@@ -47,62 +47,24 @@
                             <i class="fa-brands fa-earlybirds text-white"></i>
                         </a>
                     </p>
+                    <p id="username"></p>
                     <div class="nav-opts">
-                        <i class="fab fa-github"></i>
-                        <span>
+                        <a href="/">
+                            <i class="fab fa-github"></i>
                             Home
-                        </span>
-                    </div>
-                    <div class="nav-opts">
-                        <i class="fab fa-github"></i>
-                        <span>
-                            Explore
-                        </span>
-                    </div>
-                    <div class="nav-opts">
-                        <i class="fab fa-github"></i>
-                        <span>
-                            Notifications
-                        </span>
-                    </div>
-                    <div class="nav-opts">
-                        <i class="fab fa-github"></i>
-                        <span>
-                            Messages
-                        </span>
-                    </div>
-                    <div class="nav-opts">
-                        <i class="fab fa-github"></i>
-                        <span>
-                            Lists
-                        </span>
-                    </div>
-                    <div class="nav-opts">
-                        <i class="fab fa-github"></i>
-                        <span>
-                            Bookmarks
-                        </span>
-                    </div>
-                    <div class="nav-opts">
-                        <i class="fab fa-github"></i>
-                        <span>
-                            Twitter Blue
-                        </span>
+                        </a>
                     </div>
                     <div class="nav_opts">
-                        <i class="fab fa-github"></i>
-                        <span>
+                        <a href="/profile?username=" id="profileLink">
+                            <i class="fab fa-github"></i>
                             Profile
-                        </span>
+                        </a>
                     </div>
                     <div class="nav_opts">
                         <i class="fab fa-github"></i>
                         <span>
                             More
                         </span>
-                    </div>
-                    <div class="nav_opts">
-                        <button type="button" class="btn btn-primary mb-3">Tweet</button>
                     </div>
                     <div class="nav_opts">
                         <button class="btn btn-primary mb-3" id="logout_btn" type="button">Logout</button>
@@ -112,10 +74,9 @@
 
             <div id="main-feed" class="col-6">
                 <div id="create_tweet_container">
-                    <h1 id="temp-greeting" class="text-center">Signed in as <span id="username"></span></h1>
                     <form id='create_tweet_form'>
                         <div class="mb-3">
-                            <textarea class="form-control" id="tweet_input" name ="tweet" rows="3"
+                            <textarea class="form-control" id="tweet_input" name="tweet" rows="3"
                                 placeholder="What's going on?"></textarea>
                         </div>
                         <button type="submit" class="btn btn-primary">Tweet</button>
@@ -123,19 +84,19 @@
                 </div>
                 <div id="tweet_feed"></div>
             </div>
-            <div  class="col-4">
-                <div id = "follow_div">
+            <div class="col-4">
+                <div id="follow_div">
                     <form id="follow_user_form">
                         <div class="col-auto">
                             <label class="visually-hidden" for="f_username">Username</label>
                             <div class="input-group">
-                              <div class="input-group-text">@</div>
-                              <input type="text" class="form-control" id="f_username" placeholder="Username">
+                                <div class="input-group-text">@</div>
+                                <input type="text" class="form-control" id="f_username" placeholder="Username">
                             </div>
-                          </div>
-                          <div class="col-auto">
+                        </div>
+                        <div class="col-auto">
                             <button type="submit" class="btn btn-primary">Follow</button>
-                          </div>
+                        </div>
                     </form>
                 </div>
                 <div id="trends_section">

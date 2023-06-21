@@ -45,18 +45,17 @@ html{
 .table_div, .nav_buttons_div{
     margin-top: 10px;
 }
-#fast_box, #slow_box{
-    width: 1.5rem;
-    height: 1.5rem;
-    position:relative;
-    margin: 1rem;
+
+#bioP{
+    box-sizing: border-box;
+    height: 50px;
+    border: 1px solid black;
 }
-#fast_box{
-    background-color: black;
+
+.tweet-feed{
+    overflow-y: scroll;
 }
-#slow_box{
-    background-color: orange;
-}
+
 @media (max-width: 1007px)
 {
     .small-12{

@@ -127,8 +127,11 @@ document.addEventListener("DOMContentLoaded", async() => {
      */
     function setUsernameSpan() {
         let username = localStorage.getItem("username");
-        let username_span = document.querySelector('#username');
-        username_span.textContent = username;
+        let usernameP= document.querySelector('#username');
+        let profileLinkElement = document.querySelector("#profileLink");
+        usernameP.textContent = username;
+        profileLinkElement.href += username;
+
     }
 
     /**
@@ -141,7 +144,7 @@ document.addEventListener("DOMContentLoaded", async() => {
     }
 
     /**
-     * Giving tweet creation time in MYSQL datetime
+     * Given tweet creation time in MYSQL datetime
      * format, convert the string to simple adverbs relative
      * to when the tweet is viewed by the follower ie.,
      * "now", "1 week ago" etc.,

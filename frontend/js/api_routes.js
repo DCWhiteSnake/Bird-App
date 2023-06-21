@@ -5,3 +5,5 @@ let testNameRoute = baseRoute +  "username";
 let challengeLoginRoute = baseRoute + "challenge_login";
 let sendTweetRoute = baseRoute + "tweet";
 let followUserRoute = baseRoute + "users/follow";
+let bioRoute = baseRoute + "user/profile?username=";
+let myTweetsRoute = baseRoute + "user/tweets";

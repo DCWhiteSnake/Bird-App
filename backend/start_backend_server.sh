@@ -6,4 +6,4 @@ export usr_name=$(whoami)
 # 2b: Activate the the virtual environment called bacckend-env
 # 2c: We use gunicorn as a reverse proxy to the eventlet worker class
 ## gunicorn  -k gevent -w 1 app:app
-gunicorn -b :5000 --worker-class eventlet -w 4 --threads=4 --log-level=INFO wsgi:app
+gunicorn --preload -b :5000 --worker-class eventlet -w 4 --threads=4 wsgi:app

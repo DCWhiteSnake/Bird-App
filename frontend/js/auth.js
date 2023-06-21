@@ -1,5 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
-    path = window.location.pathname;
+    // let path = window.location.pathname.split("/");
+    // path = "/" + path[path.length - 1]
+    let path = window.location.pathname;
     // Add the event listeners for auth events 
     if (path == '/login.html') {
         let jwt = localStorage.getItem("jwt");
@@ -58,16 +60,21 @@ document.addEventListener('DOMContentLoaded', () => {
         // todo: Add other input validations
         document.querySelector("#registration_form").addEventListener("submit", register);
     }
-    else if (path = "/profile.html")
+    else if (path == "/profile.html")
     {
         const params = new URLSearchParams(window.location.search);
         const username = params.get("username");
-
+        
         if (username != null)
         {
-            
+            setUsernameHref(username);
+            setUsernameSpan();
         }
     
+    }
+    else if (path == "/editbio.html"){
+        // You are probably in an authenticated page
+        //document.querySelector("#logout_btn").addEventListener("click", logout);
     }
     else {
         // You are probably in an authenticated page
@@ -207,5 +214,28 @@ document.addEventListener('DOMContentLoaded', () => {
     function createFollowButton(){
         // todo
     }
+        /**
+     * Sets the span located within the div that greets
+     * the user to the current username. This username is gotten
+     * from local storage
+     *@returns: nothing
+     */
+     function setUsernameHref(username) {
+        let profileLinkElement = document.querySelector("#profileLink");
+        profileLinkElement.href += username;
 
+    }
+
+    /**
+     * Sets the span located within the div that greets
+     * the user to the current username. This username is gotten
+     * from local storage
+     *@returns: nothing
+     */
+     function setUsernameSpan() {
+        let username = localStorage.getItem("username");
+        let usernameP = document.querySelector('#username');
+        usernameP.textContent = username;
+
+    }
 });

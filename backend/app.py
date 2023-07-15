@@ -1,11 +1,11 @@
-# Using flask to make an api
-# import necessary libraries and functions
 import eventlet
 import eventlet.debug
+
 eventlet.monkey_patch()
 eventlet.debug.hub_prevent_multiple_readers(False)
-from flask import Flask, jsonify, request, make_response
-from flask_socketio import SocketIO, emit, disconnect, socketio
+
+from flask import Flask, jsonify, request
+from flask_socketio import SocketIO, emit, socketio
 from flask_cors import CORS
 from cs50 import SQL
 from models.user import User
@@ -13,11 +13,9 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime, timezone, timedelta
 from helpers import token_required
 import jwt, pika, os, json, utilities, uuid, logging
-from PIL import Image
-import requests
+from PIL import Image, UnidentifiedImageError
 from models.tweet import tweet
 
-# creating a Flask app
 app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS-HEADERS'] = 'Content-Type'
@@ -80,7 +78,7 @@ def login():
         return jsonify(message={"WWW-Authenticate": 'Password cannot be null'}, status=401)
     user = authenticate(email, password)
     if user:
-        app.config['SECRET_KEY']
+        # app.config['SECRET_KEY']
         token = jwt.encode({'public_id': user.id,
                             'exp': datetime.utcnow() + timedelta(hours=12)
                             }, app.config['SECRET_KEY'])
@@ -118,12 +116,19 @@ def register():
     date = creation_date[0]
     time = creation_date[1].split(".")[0]
     try:
-        _ = db.execute("INSERT INTO users(id, email, username, password_hash, creation_date, confirmed, phone_no) VALUES(?,?,?,?,?,?,?)", id, email, username, hash,
+        db.execute("INSERT INTO users(id, email, username, password_hash, creation_date, confirmed, phone_no) VALUES(?,?,?,?,?,?,?)", id, email, username, hash,
                        date+" "+time, 0, phone_no)
-        return make_response('Account created successfully', 201)
     except Exception as e:
-        print(e)
-        return make_response(jsonify({'WWW-Authenticate': str(e).split(',')[1]}), 400)
+        message = str(e).split(',')[1]
+        print(message)
+        return jsonify(message = {'WWW-Authenticate': message}, status = 400)
+    user = authenticate(email, password)
+    if user:
+        token = jwt.encode({'public_id': user.id,
+                            'exp': datetime.utcnow() + timedelta(hours=12)
+                            }, app.config['SECRET_KEY'])
+        return jsonify(message = 'Account created successfully', token = f'{token}', id = id,  status = 201)
+
 # end auth
 
 # tweet
@@ -167,6 +172,7 @@ def get_tweets(data):
         tweets = f"{body.decode('utf-8')}"
         # tweets = jsonify(tweets)
         sio.emit(f"tweets", {"tweets":tweets, "token":receiver_id})
+    
     if data["jwt"]:
         token = data["jwt"]
         token_data = jwt.decode(
@@ -201,17 +207,18 @@ def follow_user(current_user):
     # check if the user already follows 'username'
     # if so then just pass successful else create the link.
     if not username:
-        return jsonify(message={"Follow Error": "username is required"}, status=400)
+        return jsonify(message={"FollowError": "username is required"}, status=400)
     elif username == current_user.username:
-        return jsonify(message={"Follow Error": "You cannot follow yourself"}, status=400)
+        return jsonify(message={"FollowError": "You cannot follow yourself"}, status=400)
+    
     # Check if user already follows
     # if so, just send that the following was successful
-    follower_row = db.execute("SELECT l1.id FROM links \
+    follower_row = db.execute("SELECT l1.follower_id FROM links \
             JOIN users u1 ON u1.username = ? \
-            JOIN users u2 ON u2.id = u1.id \
-            JOIN links l1 ON l1.follower_id = ? AND l1.leader_id = u2.id", username, id)
+            JOIN users u2 ON u2.id = ? \
+            JOIN links l1 ON l1.follower_id = u2.id AND l1.leader_id = u1.id", username, id)
     if len(follower_row) == 1:
-        return jsonify(message={"Success": f"Successful followed @{username}"}, status=201)
+        return jsonify(message={"Success": f"Already following @{username}"}, status=200)
     else:
         leader_id_rows = db.execute(
             "SELECT u1.id FROM users u1 WHERE u1.username = ?", username)
@@ -245,6 +252,7 @@ def handle_bio():
         # check if the header contains x-access-token and then parse it to extract the user id
         if 'x-access-token' in request.headers:
             token = request.headers['x-access-token']
+            profile_address = ""
         # return 401 if token is not passed or a tricky user tries to edit
         # someone else's profile
             try:          
@@ -254,12 +262,7 @@ def handle_bio():
                 user = db.execute("SELECT * FROM users WHERE id = ?", public_id)[0]
                 current_user = User.create_user(user)
                 username = request.form.get("username")
-                
-                if username != current_user.username:
-                    return jsonify(message={"Server-Error": f"Unable to process requests at this time"},
-                                    status=503)
-
-                
+                profile_address = current_user.profile_photo       
             except:
                 return jsonify(message={'WWW-Authenticate':'Token is invalid !!'}, status = 401)
             user_id = current_user.id
@@ -272,47 +275,59 @@ def handle_bio():
             new_username = request.form.get("username")
             if new_username == current_user.username:
                 pass
-            elif len(new_username) > 0:
-                usernameRows = db.execute("SELECT username from users where username = ?", new_username)
-                if len(usernameRows != 0):
-                    return jsonify(message={'username-error':'The username is already taken'}, status = 400)
+            else:   
+                if len(new_username) > 0:
+                    username_rows = db.execute("SELECT username from users where username = ?", new_username)
+                    if len(username_rows) != 0:
+                        return jsonify(message={'username-error':'The username is already taken'}, status = 400)
+                else:
+                    return jsonify(message={'username-error':'You must supply a username'}, status = 400)
 
-
-            # Handle profile image update
-            new_profile_image = Image.open(request.files["profile-img-input"])
-            if new_profile_image:
-                try:
-                    general_images_path = "../frontend/user_images"
-                    os.mkdir(general_images_path)
-                except FileExistsError as e:
-                    pass
-                try:
-                    new_profile_path = os.path.join(general_images_path, f"{user_id}")
-                    os.mkdir(new_profile_path)
-                except FileExistsError as e:
-                    pass         
+            # Handle profile image update          
+            if (request.files["profile-img-input"]):
+                    try:
+                        extension = ""
+                        new_profile_image = Image.open(request.files["profile-img-input"])
+                        general_images_path = "../frontend/user_images"
+                        os.mkdir(general_images_path)
+                    except FileExistsError as e:
+                        pass
+                    except UnidentifiedImageError:
+                        return jsonify(message={"Image-Error": "Unsupported image format"}, status="400")
+                    try:
+                        new_profile_path = os.path.join(general_images_path, f"{user_id}")
+                        os.mkdir(new_profile_path)
+                    except FileExistsError as e:
+                        pass         
             
-                try:
-                    # Upload photos to client library
-                    profile_address= os.path.join(new_profile_path, user_id + ".jpg")
-                    new_profile_image.save(f"{profile_address}",format="JPEG")
+                    try: 
+                        # Upload photos to client library
+                        if new_profile_image.format == "JPEG":
+                            extension = ".jpg"
+                            profile_address= os.path.join(new_profile_path, user_id + extension)
+                            new_profile_image.save(f"{profile_address}",format="JPEG")
+                        else:
+                            extension = ".png"
+                            profile_address= os.path.join(new_profile_path, user_id + extension)
+                            new_profile_image.save(f"{profile_address}",format="PNG")
+
 
                     # Todo: Use Google drive as a CDN
                     # Create photo for this particular user
                     # requests.post(headers={"Content-type": "application/json",
                     # "Authorization": f"Bearer {g_photos_token}"}, body = Image.open(new_profile_path))
-                except FileExistsError as e:
-                    # This means that the user already has a profile image,
-                    os.remove(profile_address)
-                    new_profile_image.save(f"{profile_address}", path=new_profile_path, format="JPG")
-                    
-            else:
-                profile_address = current_user.profile_photo
+                    except FileExistsError as e:
+                        # This means that the user already has a profile image,
+                        os.remove(profile_address)
+                        new_profile_image.save(f"{profile_address}", path=new_profile_path, format=new_profile_image.format)
+                    if(profile_address):
+                        profile_address= os.path.join("user_images", user_id, user_id + extension)
+                    else:
+                        profile_address = current_user.profile_photo
 
-            profile_address= os.path.join("user_images", user_id, user_id + ".jpg")
             affected_bio_count = db.execute("UPDATE users SET username = ?, \
                                             bio = ?, profile_photo = ? WHERE id = ?", new_username, new_bio,
-                                               profile_address, user_id)
+                                            profile_address, user_id)
             if (affected_bio_count == 1):
                 return jsonify(message={"Success": "Bio updated successfully"}, status=201)
             else:
@@ -329,18 +344,84 @@ def handle_user_tweets():
         request_username = request.args["username"]
         try:
 
-            tweet_db_rows  = db.execute("SELECT article as tweet, users.id as receiver_id, time, tweets.id as id FROM tweets JOIN users on users.id = tweets.sender_id AND users.username = ? LIMIT ? OFFSET ?", request_username, 3, 3 * page)
+            tweet_db_rows  = db.execute("SELECT article as tweet, users.id as receiver_id, time, tweets.id as id FROM tweets JOIN users on users.id = tweets.sender_id AND users.username = ? ORDER BY time DESC LIMIT ? OFFSET ? ", request_username, 3, 3 * page)
             if len(tweet_db_rows) > 0:
                 tweet_rows = [tweet(t["tweet"], t["receiver_id"], request_username, t["time"], t["id"]) for t in tweet_db_rows]
                 #tweets_json = json.dumps(tweet_rows)
+
                 tweets_json = [str(tweet_obj) for tweet_obj in tweet_rows]
                 return jsonify(message={"tweets": tweets_json}, status = 200)
             else:
-                return jsonify(message="No Tweets", status=200)
+                return jsonify(message={"tweets": []}, status=200)
         except:
             return jsonify(message={"Bad Request": "This user doesn't exist"}, status=404)
     if request.method == "DELETE":
         return jsonify(message="Ok", status = 200)
+    
+@app.route("/api/user/profile/image", methods=["GET"])
+def get_ImageLink():
+    username = request.args.get("username")
+    if username:
+        try:
+            print(username)
+            profile_photh_rows = db.execute("SELECT profile_photo FROM users WHERE username = ?", username)
+            if len(profile_photh_rows) == 1:
+                print(profile_photh_rows[0]["profile_photo"])
+                return jsonify(message={"profile_photo":profile_photh_rows[0]["profile_photo"]}, status=200)
+            else:
+                return jsonify(status = 404)
+        except Exception as e:
+                print(e)
+                return jsonify(message=str(e), status = 500)
+    else:
+        return jsonify(message="Bad Request",  status = 404)
+# end profile
+
+
+@app.route("/api/user/followers", methods=["GET"])
+def handle_user_followers():
+    if request.method == "GET":
+        page_size = 10
+        page = int(request.args["pageNumber"])
+        request_username = request.args["username"]
+        try:
+
+            follower_rows  = db.execute("SELECT u1.username, u1.bio, u1.profile_photo, u1.id as id FROM links l1 \
+                                        JOIN users u1 ON u1.id = l1.follower_id \
+                                        JOIN users u2 on u2.id = l1.leader_id and u2.username= ? \
+                                        ORDER BY l1.time ASC LIMIT ? OFFSET ?", request_username, page_size, page_size * page)
+            if len(follower_rows) > 0:
+                follower_rows = [User(bio = followers["bio"], username = followers["username"],
+                                    profile_photo = followers["profile_photo"], id = followers["id"], email = "", phone_no = "",
+                                    password_hash = "", creation_date = "", follower_count = "", following_count = "", confirmed = "",
+                                    cash = "", tweets_count = "") for followers in follower_rows]
+                followers_json = [str(userObject) for userObject in follower_rows]
+                return jsonify(message={"followers": followers_json}, status = 200)
+            else:
+                return jsonify(message={"followers": []}, status=200)
+        except:
+            return jsonify(message={"Bad Request": "This user doesn't exist"}, status=404)
+
+@app.route("/api/user/following", methods=["GET"])
+def handle_user_following():
+    if request.method == "GET":
+        page_size = 3
+        page = int(request.args["pageNumber"])
+        request_username = request.args["username"]
+        try:
+
+            following_rows  = db.execute("SELECT u1.username, u1.bio, u1.profile_photo, u1.id as id FROM links l1 JOIN users u1 ON u1.id = l1.leader_id JOIN\
+                                         users u2 on u2.id = l1.follower_id and u2.username= ? LIMIT ? OFFSET ?", request_username, page_size, 3 * page)
+            if len(following_rows) > 0:
+                following_rows = [User(bio=following["bio"], username= following["username"],
+                                      profile_photo= following["profile_photo"], id = following["id"], email = "", phone_no = "", password_hash = "", creation_date = "",
+                                        follower_count = "", following_count = "", confirmed = "", cash = "", tweets_count="") for following in following_rows]
+                following_json = [str(userObject) for userObject in following_rows]
+                return jsonify(message={"following": following_json}, status = 200)
+            else:
+                return jsonify(message={"following": []}, status=200)
+        except:
+            return jsonify(message={"Bad Request": "This user doesn't exist"}, status=404)
 # end profile
 
 # Sockets
@@ -356,10 +437,11 @@ def handle_connection():
 def handle_token(x_access_token):
 
     if x_access_token:
-        data = jwt.decode(
-            x_access_token, app.config['SECRET_KEY'], algorithms=['HS256'])
-        public_id = data['public_id']
         try:
+            data = jwt.decode(
+                x_access_token, app.config['SECRET_KEY'], algorithms=['HS256'])
+            public_id = data['public_id']
+        
             user = db.execute("SELECT * FROM users WHERE id = ?", public_id)[0]
             current_user = User.create_user(user)
             emit('username', f'Hello {current_user.username} from the server ')

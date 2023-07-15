@@ -1,0 +1,100 @@
+.profile-block{
+        height: 155px;
+        
+}
+.profile-block:hover{
+        background-color: #9f9f9f;
+}
+.img-container{
+
+        display: inline-block;
+        width:  60px;
+        height: 60px;
+        border-radius: 50%;
+        overflow: hidden;
+}
+img{
+        display: inline-block;
+}
+.names-container{
+        height: 70px;
+        font-size: 25px;
+        overflow: hidden;
+}
+.name{
+        margin: 0 0 1px 0;
+
+}
+.username-grey{
+        color: grey;
+}
+.username-black{
+        color: black;
+        font-weight: bolder;
+        line-height: 0.7;
+}
+
+.f-btn{
+        background-color: black;
+        color: white
+}
+
+.profile-container{
+        height: 80vh;
+        
+}
+.profile-row{
+        padding: 20px;
+}
+
+.follow-btn{
+        background-color: #000000;
+        border: none;
+        color: #ffffff;
+        padding: 10px 20px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        margin: 4px 2px;
+        cursor: pointer;
+        border-radius: 30px;
+}
+.opt-btn{
+        color: hsl(0, 0%, 0%);
+        padding: 5px 10px;
+        margin: 4px 2px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        background-color: white;
+        font-size: 20px;
+        font-weight: bolder;
+        cursor: pointer;
+        border: 1px solid #ffffff00
+        
+}
+.opt-btn:hover{
+        border: 1px solid #ffffff;
+        color:#00b7ff;
+        background-color: #00b7ff41;
+        border-radius: 100%;
+}
+.btn-container{
+        border-radius: 25%;
+        display: inline-block;
+        height: 40px;
+}
+
+@media (max-width: 1007px)
+{
+    .small-12{
+        width: 100%;
+    }
+    #x_menu_btn{
+        display: block;
+    }
+    #sidebar_menu, .main_content_article{
+         height:auto;
+         overflow-y: hidden;
+    }
+}

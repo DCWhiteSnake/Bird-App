@@ -7,3 +7,4 @@ let sendTweetRoute = baseRoute + "tweet";
 let followUserRoute = baseRoute + "users/follow";
 let bioRoute = baseRoute + "user/profile?username=";
 let myTweetsRoute = baseRoute + "user/tweets";
+let profileImgRoute = baseRoute + "user/profile/image?username="

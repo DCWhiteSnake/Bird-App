@@ -20,33 +20,27 @@ document.addEventListener('DOMContentLoaded', () => {
     else if (path == '/register.html') {
         const request = indexedDB.deleteDatabase("tweetsDb");
 
-        request.addEventListener("success", 
-        (e) => {
-            // Have to chain it with deleting the db so
-            // these variables don't clear thereby tricking
-            // my auth functions.
-            console.log("db deleted successfully");
-            localStorage.setItem("jwt", "");
-            localStorage.setItem("username", "");
-            localStorage.setItem("Email", "");
-            localStorage.setItem("id", "");
-    
-            // finally redirect to login page
-        });
-        request.addEventListener("error", 
-        (e) => {
-            console.log("no db to delete");
-        });
-        // localStorage.setItem("jwt", "");
-        // localStorage.setItem("Email", "");
-        // localStorage.setItem("username", "")
-        // do some client-side input validation
+        request.addEventListener("success",
+            (e) => {
+                // Have to chain it with deleting the db so
+                // these variables don't clear thereby tricking
+                // my auth functions.
+                console.log("db deleted successfully");
+                localStorage.setItem("jwt", "");
+                localStorage.setItem("username", "");
+                localStorage.setItem("Email", "");
+                localStorage.setItem("id", "");
+
+                // finally redirect to login page
+            });
+        request.addEventListener("error",
+            (e) => {
+                console.log("no db to delete");
+            });
         let registrationForm = document.querySelector("#registration_form");
         var passwordInput = registrationForm.elements["password"];
         var passwordConfirmationInput = registrationForm.elements["confirmation"];
-        var emailInput = registrationForm.elements["email"];
-        var usernameInput = registrationForm.elements["email"];
-        var phoneNoInput = registrationForm.elements["email"];
+
 
         passwordConfirmationInput.addEventListener('input', () => {
             if (passwordInput.value !== passwordConfirmationInput.value) {
@@ -60,28 +54,25 @@ document.addEventListener('DOMContentLoaded', () => {
         // todo: Add other input validations
         document.querySelector("#registration_form").addEventListener("submit", register);
     }
-    else if (path == "/profile.html")
-    {
-        const params = new URLSearchParams(window.location.search);
-        const username = params.get("username");
-        
-        if (username != null)
-        {
-            setUsernameHref(username);
-            setUsernameSpan();
+    else if (path == "/profile.html") {
+        let params = new URLSearchParams(window.location.search);
+        let profileUsername = params.get("username");
+
+        if (profileUsername != null) {
+            let profileLinkElement = document.querySelector("#profile-link");
+            profileLinkElement.href = profileAddress + profileUsername;
+            let authUsername = localStorage.getItem("username");
+            let usernameP = document.querySelector('#username');
+            usernameP.textContent = authUsername;
         }
-    
+
     }
-    else if (path == "/editbio.html"){
-        // You are probably in an authenticated page
-        //document.querySelector("#logout_btn").addEventListener("click", logout);
-    }
-    else {
+    if (path != '/register.html' && path != '/login.html') {
         // You are probably in an authenticated page
         document.querySelector("#logout_btn").addEventListener("click", logout);
     }
 
-    async function login(event) {
+    function login(event) {
         event.preventDefault();
         fetch(loginRoute, {
             method: 'POST',
@@ -112,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     u_div.appendChild(u_p);
                     login_div.appendChild(u_div);
-                    
+
                     // clear all state data.
                     localStorage.setItem('jwt', "");
                     localStorage.setItem('username', "");
@@ -136,62 +127,78 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Error:', error.message);
             });
     }
-    async function register(event) {
+    function register(event) {
         event.preventDefault();
         let registrationForm = document.querySelector("#registration_form");
         let formData = new FormData(registrationForm);
-        try {
-            let response = await fetch(registrationRoute, {
-                method: 'POST',
-                body: formData
+        fetch(registrationRoute, {
+            method: 'POST',
+            body: formData
+        })
+            .then((response) => {
+
+                if (response.ok) {
+                    return response.json();
+                }
+            })
+            .then((responseJson) => {
+                if (responseJson.status == 201) {
+                    // Switch to edit profile div
+                    localStorage.setItem("email", registrationForm.elements["email"].value);
+                    localStorage.setItem("username", registrationForm.elements["username"].value);
+                    localStorage.setItem("jwt", responseJson.token);
+                    localStorage.setItem("id", responseJson.id);
+                    document.querySelector("#registration-container").classList.remove('active');
+                    document.querySelector("#onboarding-form-container").classList.add('active');
+                    setAutnBio();
+                    const updateBioBtn = document.querySelector("#update-bio-btn");
+                    updateBioBtn.addEventListener("click", updateBio);
+                    const profileImageInput =   document.querySelector("#profile-img-input");
+                    profileImageInput.addEventListener("change", displayUploadedImge)
+                }
+                else {
+                    throw new Error(responseJson["WWW-Authenticate"]);
+                }
+
+            }).catch((error) => {
+                duplicate_email_regex = /unique_email/;
+                duplicate_username_regex = /unique_username/;
+                if (duplicate_email_regex.test(error)) {
+                    document.querySelector("#email_error").classList.remove("hidden");
+                    setTimeout(() => {
+                        document.querySelector("#email_error").classList.add("hidden");
+                    }, 1500);
+                }
+                else if (duplicate_username_regex.test(error)) {
+                    document.querySelector("#username_error").classList.remove("hidden");
+                    setTimeout(() => {
+                        document.querySelector("#username_error").classList.add("hidden");
+                    }, 1500);
+                }
+                else {
+                    let generalErrorP = document.querySelector("#general_error");
+                    generalErrorP.textContent = error;
+                    generalErrorP.classList.remove("hidden");
+
+                    setTimeout(() => {
+                        generalErrorP.classList.add("hidden");
+                    }, 1500);
+                }
             });
-
-            if (response.ok) {
-                localStorage.Email = registrationForm.elements["email"].value;
-                window.location.href = registrationSuccessfulAddress;
-            }
-            else {
-                return response.json()
-                    .then(error => {
-                        // Error comes in the format 'WWW-Authenticate: error message'
-                        throw new Error(error['WWW-Authenticate']);
-                    }).catch(error => {
-                        // Unnecessary use of regex to parse error message for message that looks
-                        // like it address email duplication
-                        // After parsing get the top div and put the error message above
-                        duplicate_email_regex = /unique_email/;
-                        duplicate_username_regex = /unique_username/;
-                        if (duplicate_email_regex.test(error)) {
-                            document.querySelector("#email_error").style.display = "block";
-                        }
-                        else if (duplicate_username_regex.test(error)) {
-                            document.querySelector("#username_error").style.display = "block";
-                        }
-                        else {
-                            document.querySelector("#general_error").textContent = error;
-                        }
-                    });
-            }
-        }
-
-        catch (error) {
-            document.querySelector("#general_error").textContent = error
-        }
     }
-
     function logout(event) {
         event.preventDefault();
         const request = indexedDB.deleteDatabase("tweetsDb");
 
-        request.addEventListener("success", 
-        (e) => {
-           console.log("db deleted successfully");
-        });
+        request.addEventListener("success",
+            (e) => {
+                console.log("db deleted successfully");
+            });
 
-        request.addEventListener("error", 
-        (e) => {
-            console.log("no db to delete");
-        });
+        request.addEventListener("error",
+            (e) => {
+                console.log("no db to delete");
+            });
 
         // Clear all state data
         localStorage.setItem("jwt", "");
@@ -204,38 +211,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1500);
 
     }
-
-    function setProfileTweets(){
-            // todo
-    }
-    function setProfileBio(){
-        // todo
-    }
-    function createFollowButton(){
-        // todo
-    }
-        /**
-     * Sets the span located within the div that greets
-     * the user to the current username. This username is gotten
-     * from local storage
-     *@returns: nothing
-     */
-     function setUsernameHref(username) {
-        let profileLinkElement = document.querySelector("#profileLink");
-        profileLinkElement.href += username;
-
-    }
-
-    /**
-     * Sets the span located within the div that greets
-     * the user to the current username. This username is gotten
-     * from local storage
-     *@returns: nothing
-     */
-     function setUsernameSpan() {
-        let username = localStorage.getItem("username");
-        let usernameP = document.querySelector('#username');
-        usernameP.textContent = username;
-
-    }
 });
+
+
+function reloadStylesheets() {
+    var queryString = '?reload=' + new Date().getTime();
+    let currStylesheet = document.querySelector('link[rel*="stylesheet"]');
+    currStylesheet.href = currStylesheet.href.replace(/\?.*|$/, queryString);
+}

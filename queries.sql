@@ -98,7 +98,11 @@ ADD bio varchar(255) DEFAULT "";
 ALTER TABLE users
 Add following_count int DEFAULT 0;
 
+ALTER TABLE users
+ADD likes_count int DEFAULT 0;
 
+ALTER TABLE users
+ADD tweets_count int DEFAULT 0;
 
 CREATE TRIGGER increase_following_count_trigger
 AFTER INSERT ON links
@@ -113,14 +117,61 @@ FOR EACH ROW
 UPDATE users
 SET following_count = following_count - 1
 WHERE id = OLD.follower_id;
+/****/
+
+CREATE TRIGGER increase_tweet_count_trigger
+after insert on tweets
+for each row
+update users
+set tweets_count = tweets_count + 1
+where id = NEW.sender_id;
+
+CREATE TRIGGER decrease_tweet_count_trigger
+AFTER DELETE ON tweets
+FOR EACH ROW
+UPDATE users
+SET tweets_count = tweets_count - 1
+WHERE id = OLD.sender_id;
+
+CREATE TRIGGER increase_tweeter_like_count_trigger
+AFTER INSERT ON likes
+FOR EACH ROW
+UPDATE users
+SET likes_count = likes_count + 1
+WHERE id = NEW.liker_id;
+
+CREATE TRIGGER decrease_tweeter_like_count_trigger
+AFTER DELETE ON likes
+FOR EACH ROW
+UPDATE users
+SET likes_count = likes_count - 1
+WHERE id = OLD.liker_id;
+
+
 -- Playground scripts
 -- I used this to test my joins
+
 -- Get the user row if the user already follows B
-select l1.id from links JOIN users u1 on u1.username = 'dcwhitesnake' Join users u2 on u2.id = u1.id JOIN links l1 on l1.follower_id = '67f284e3-e548-48de-8a7b-e09948980291' AND l1.leader_id= u2.id;
+select l1.id from links JOIN users u1 on u1.username = 'dcwhitesnake'\
+    Join users u2 on u2.id = u1.id \
+    JOIN links l1 on l1.follower_id = '67f284e3-e548-48de-8a7b-e09948980291' AND l1.leader_id= u2.id;
 
 SELECT u1.id FROM users u1 WHERE  u1.username = 'dcwhitesnake';
 
-SELECT l1.follower_id, u1.username FROM links l1 JOIN users u1 ON u1.id = l1.follower_id AND l1.leader_id='67f284e3-e548-48de-8a7b-e09948980291';
+-- get list of followers
+SELECT l1.follower_id, u1.username FROM links l1z
+    JOIN users u1 ON u1.id = l1.follower_id AND l1.leader_id='67f284e3-e548-48de-8a7b-e09948980291';
 
-SELECT follower_id, u1.username as follower_name, u2.username  as leader_name FROM links l1 JOIN users u1 ON u1.id = l1.follower_id AND l1.leader_id='67f284e3-e548-48de-8a7b-e09948980291'  JOIN users u2 ON u2.id = l1.leader_id;
+SELECT follower_id, u1.username as follower_name, u2.username  as leader_name FROM links l1\
+    JOIN users u1 ON u1.id = l1.follower_id AND l1.leader_id='67f284e3-e548-48de-8a7b-e09948980291'\
+    JOIN users u2 ON u2.id = l1.leader_id;
 
+-- get details of followers of user x given x's username
+SELECT u1.username, u1.bio, u1.profile_photo FROM links l1\
+    JOIN users u1 ON u1.id = l1.follower_id\
+    JOIN users u2 on u2.id = l1.leader_id and u2.username='dcwhitesnake';
+
+SELECT l1.follower_id, l1.leader_id FROM links \
+    JOIN users u1 ON u1.username = "testfollower" \
+    JOIN users u2 ON u2.id = 'f8fe14b7-5e1b-49df-9b1d-6777f8337c8d' \
+    JOIN links l1 ON l1.follower_id = u1.id AND l1.leader_id = u2.id;

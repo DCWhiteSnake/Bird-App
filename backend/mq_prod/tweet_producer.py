@@ -33,7 +33,7 @@ def broadcast_tweet(data):
                           routing_key = receiver_id,
                           body= str(body))
     sio.emit('message_stored', {'response': 'Successful'})
-    print(f'message: {body.tweet}\n for:{receiver_id} stored successfully\n')
+    print(f'message: {body.tweet}\nfor:{receiver_id} stored successfully\n')
     connection.close()
 
 @sio.event

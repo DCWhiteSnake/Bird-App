@@ -5,6 +5,7 @@ This is a twitter like social media web app.
   + You need to create a MYSQL database with the name bird_app_db
   + For the queries used to create the db see [queries](https://github.com/DCWhiteSnake/Bird-App/blob/main/queries.sql "SQL queries")
   + The database, for the ER diagram see [ER diagrams](https://github.com/DCWhiteSnake/Bird-App/blob/main/EntityDiagrams.png "Entity relationship diagrams").
+  Added an architecture diagram [Architecture Diagram](https://github.com/DCWhiteSnake/Bird-App/blob/main/Architecture.png "Architecture diagram") 
 - Flask - The backend
 - Socket.io - For a persistent communication channel between the client and server. Socket.io is an extension of Websockets technology
 - Gunicorn - Reverse proxy
@@ -36,24 +37,3 @@ This is a twitter like social media web app.
 
 #Note
 If using WSL, it must be version 2, if not gevent won't run correctly. You can check the version via **wsl -l -v** in a powershell terminal.
-
-#Note 
-
-Update: 6-2-2023
-The current commit introduces some breaking changes specifically with the start_backend_server.sh script and the run_p.sh script. Below is a supplementary guide to running the app
-- export sql_pass="insert your sql password here" && export SIO_SECRET="secretstuff2"
-- export usr_name=$(whoami)
-- cd into backend folder then **flask run**
-- cd into backend in another terminal then **python tweet_producer.py**
-- cd into frontend in another terminal then http-server.
-Functionality added:
- - Ability to follow user by searching for name
- - Functionality to get tweets from people you follow (buggy)
- - Touch up the style and elements on the webapp
- - Backend flow to get tweets and then broadcast to followers.
-
-Update 6-12-2023
-- Old Tweets are now persisted to the browser's indexDb till you log out
-- You can run with the run-app.sh script again 😊
-- Added an architecture diagram [Architecture Diagram](https://github.com/DCWhiteSnake/Bird-App/blob/main/Architecture.png "Architecture diagram") to show a high-level idea of the app
-- Style is still meh.

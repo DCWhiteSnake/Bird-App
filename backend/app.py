@@ -170,7 +170,6 @@ def get_tweets(data):
     def callback(ch, method, properties, body):
     
         tweets = f"{body.decode('utf-8')}"
-        # tweets = jsonify(tweets)
         sio.emit(f"tweets", {"tweets":tweets, "token":receiver_id})
     
     if data["jwt"]:

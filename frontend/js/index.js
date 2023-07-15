@@ -82,9 +82,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                     jwt = localStorage.getItem("jwt");
                     socket.emit("x-access-token", jwt);
                     console.log("Client: {token}");
+                   
                 });
                 socket.on('username', msg => {
                     console.log("Server: " + msg);
+                    socket.emit('get_tweets', { "jwt": jwt });
                 });
 
                 // When a new tweet is created, emit message to get tweets, passing

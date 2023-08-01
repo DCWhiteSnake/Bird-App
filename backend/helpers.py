@@ -27,17 +27,22 @@ def token_required(f):
         # return 401 if token is not passed
         if not token:
             return jsonify({'message' : 'Token is missing !!'}, 401)
-  
         try:
-            # decoding the payload to fetch the stored details
-            data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
-            public_id = data['public_id']
-            user = db.execute("SELECT * FROM users WHERE id = ?", public_id)[0]
-            current_user =  User.create_user(user)
-            
+            current_user = get_current_user(token)   
         except:
             return jsonify(message={'WWW-Authenticate':'Token is invalid !!'}, status = 401)
         # returns the current logged in users context to the routes
         return  f(current_user, *args, **kwargs) 
     return decorated
 
+
+def get_current_user(token):
+        try:
+            data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+            public_id = data['public_id']
+            user = db.execute("SELECT * FROM users WHERE id = ?", public_id)[0]
+            current_user =  User.create_user(user)
+            return current_user
+        except Exception as e:
+            raise (e)        
+        

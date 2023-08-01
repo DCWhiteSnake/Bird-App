@@ -1,59 +1,92 @@
+let killGettingTweets = false;
 document.addEventListener("DOMContentLoaded", () => {
         path = window.location.pathname;
         if (path == "/profile.html") {
                 const params = new URLSearchParams(window.location.search);
-                const editProfileBtn = document.querySelector("#edit-profile-btn");
+
                 const username = params.get("username");
                 // const tweetFeedDiv = document.querySelector("#tweet_feed");
+                let editProfileContainer = document.querySelector("#edit-profile-container");
+                editProfileContainer.classList.add("hidden");
                 const tweetFeedDiv = document.querySelector(".man");
-                getBio(username);
 
                 let pageNumber = 0;
+
                 // fetches the first 10 tweets and displays to the user.
                 getMyTweets(pageNumber, username);
+
                 // every time the user scrolls, fetch the next 10 tweets
-                tweetFeedDiv.addEventListener("scroll",
-                        getMyTweets(++pageNumber, username));
-
-                const editProfileContainer = document.querySelector("#edit-profile-container");
-                editProfileContainer.classList.add("hidden");
-                openProfileLink();
-                if (username != localStorage.getItem("username")) {
-                        editProfileBtn.classList.add("hidden-edit-btn");
-                }
-                editProfileBtn.addEventListener("click", (e) => {
-                        e.preventDefault();
-                        if (!e.target.classList.contains("hidden-edit-btn")) {
-                                // let mc = document.querySelector(".content-1");
-                                let html = document.querySelector("body");
-                                html.classList.add("disabled");
-
-                                let mainContent = document.querySelector("#content-1");
-                                mainContent.classList.add("disabled");
-
-                                let sideMenu = document.querySelector("#sidebar_menu");
-                                sideMenu.classList.add("disabled");
-                                editProfileContainer.classList.remove("hidden");
-                                const cancelButton = document.querySelector("#cancel-edit-btn");
-                                cancelButton.addEventListener('click', () => {
-                                        editProfileContainer.classList.add("hidden");
-
-                                        html.classList.remove("disabled");
-                                        mainContent.classList.remove("disabled");
-                                        sideMenu.classList.remove("disabled");
-                                })
-                                const username = localStorage.getItem("username");
-                                setAutnBio();
-                                const updateBioBtn =
-                                        document.querySelector("#update-bio-btn");
-                                const bioInput = document.querySelector("#bio");
-                                const profileImageInput =
-                                        document.querySelector("#profile-img-input");
-
-                                profileImageInput.addEventListener("change", displayUploadedImge)
-                                updateBioBtn.addEventListener("click", updateBio);
+                tweetFeedDiv.addEventListener("scroll", () => {
+                        if (!killGettingTweets) {
+                                getMyTweets(++pageNumber, username);
                         }
-                });
+                })
+
+                getBio(username)
+                        .then((user) => {
+                                document.querySelectorAll(".follow-link")
+                                        .forEach((link) => {
+                                                link.addEventListener('click', () => {
+                                                        window.location.href = `follow.html?username=${username}&opt=${link.getAttribute('data-option')}`
+                                                })
+                                        });
+
+                                openProfileLink();
+                                let target_list = [];
+                                const optContainer = document.querySelector("#opt-container");
+                                const optBtn = createOptBtn();
+                                optBtn.classList.add("following-special");
+                                if (user.username != localStorage.getItem("username")) {
+                                        checkIfFollowing(username)
+                                                .then((u_follow) => {
+                                                        optBtn.classList.add("following-special-left");
+                                                        const unfollowBtn = createunfollowBtn(user, target_list);
+                                                        unfollowBtn.classList.add("following-special", "following-special-left");
+                                                        unfollowBtn.addEventListener("click", (e) => {
+                                                                target_list.push("uf-btn");
+                                                                unfollow(e.target.getAttribute("data-id"))
+                                                                        .then((status) => {
+                                                                                if (status) {
+                                                                                        optContainer.removeChild(unfollowBtn);
+                                                                                        optContainer.prepend(followBtn);
+                                                                                }
+                                                                        });
+                                                        });
+                                                        const followBtn = createFollowBtn(user);
+                                                        followBtn.classList.add("following-special", "following-special-left");
+                                                        followBtn.addEventListener("click", (e) => {
+                                                                target_list.push("f-btn");
+                                                                follow(e.target.getAttribute("user-id"))
+                                                                        .then((success) => {
+                                                                                if (success) {
+                                                                                        optContainer.removeChild(followBtn);
+                                                                                        optContainer.prepend(unfollowBtn)
+                                                                                }
+                                                                        });
+                                                        });
+                                                        if (u_follow) {
+                                                                optContainer.appendChild(optBtn);
+                                                                optContainer.prepend(unfollowBtn);
+
+                                                        }
+                                                        else {
+                                                                optContainer.appendChild(optBtn);
+                                                                optContainer.prepend(followBtn);
+
+                                                        }
+                                                }).
+                                                catch((e) => {
+                                                        console.error(e);
+                                                });
+
+
+                                }
+                                else {
+
+                                        optContainer.appendChild(createEditProfileBtn());
+                                        optContainer.appendChild(optBtn);
+                                }
+                        })
         }
         function getMyTweets(pageNumber, username) {
                 fetch(myTweetsRoute + `?username=${username}&pageNumber=${pageNumber}`)
@@ -67,6 +100,9 @@ document.addEventListener("DOMContentLoaded", () => {
                         })
                         .then((responseJson) => {
                                 if (responseJson.status == 200) {
+                                        if ((responseJson.message["tweets"]).length == 0) {
+                                                killGettingTweets = true;
+                                        }
                                         // var tweetObjects = JSON.parse(responseJson.message);
                                         responseJson.message["tweets"].forEach((tweetObj) => {
                                                 let tweetObject = JSON.parse(tweetObj);
@@ -83,7 +119,7 @@ document.addEventListener("DOMContentLoaded", () => {
  * appendTweetToDOM - Postpends tweet items to the tweet block
  * @param {tweetBlock} - The div containing the tweet html elements 
  */
-function appendTweetToDOM(tweetBlock){
+function appendTweetToDOM(tweetBlock) {
         let tweetFeedDiv = document.querySelector("#tweet_feed");
         tweetFeedDiv.appendChild(tweetBlock);
 }
@@ -100,11 +136,10 @@ function getBio(username) {
         const timeJoinedTag = document.querySelector("#time-joined-span");
         const profileImageTagLg = document.querySelector("#profile-img-lg");
         const defaultProfileImageContainer = document.querySelector("#default-img-container");
-        const defaultProfileIcon = document.querySelector("#default-profile-icon");
+        // const defaultProfileIcon = document.querySelector("#default-profile-icon");
         const bannerName = document.querySelector("#banner-name");
         const bannerTweetCount = document.querySelector("#banner-tweet-count");
-
-        fetch(bioRoute + `${username}`, {
+        return fetch(bioRoute + `${username}`, {
                 method: "GET"
         })
                 .then((data) => {
@@ -130,7 +165,8 @@ function getBio(username) {
                                 timeJoinedTag.textContent = userDetails.getCreationDate();
                                 profileImageTagLg.src = (userDetails.profilePhoto == null) ?
                                         "/img/default_profile.png" : userDetails.profilePhoto + `?${new Date().getTime()}`;
-                                defaultProfileIcon.style.display = defaultProfileImageContainer.style.display = (userDetails.profilePhoto) ? "none" : "block";
+                                // defaultProfileIcon.style.display = defaultProfileImageContainer.style.display = (userDetails.profilePhoto) ? "none" : "block";
+                                return userDetails;
                         }
                         else {
                                 bioErrorMessage = data.message["Bio-Request-Error"];
@@ -142,12 +178,7 @@ function getBio(username) {
                         console.log(exception);
                 })
 
-        document.querySelectorAll(".follow-link")
-                .forEach((link) => {
-                        link.addEventListener('click', () => {
-                                window.location.href = `follow.html?username=${username}&opt=${link.getAttribute('data-option')}`
-                        })
-                });
+
 }
 /**
  * setAutnBio - Sets the current bio values for the authenticated
@@ -258,4 +289,66 @@ function openProfileLink() {
                 e.preventDefault();
                 window.open(e.target.href, "_blank").focus();
         })
+}
+
+function checkIfFollowing(username) {
+        return fetch(checkFollowingRoute + `?username=${username}`,
+                { headers: { "x-access-token": localStorage.getItem("jwt") } })
+                .then((response) => {
+                        if (response.ok) {
+                                return response.json();
+                        }
+                })
+                .then((responseJson) => {
+                        if (responseJson.status == 200) {
+                                return responseJson.message.u_follow
+                        }
+                }).catch((e) => {
+                        return Promise.resolve(true);
+                });
+}
+
+/**
+ * createEditProfileBtn - Creates the edit button.
+ * @returns {{HtmlButtonElement}}
+ */
+function createEditProfileBtn() {
+        const editProfileContainer = document.querySelector("#edit-profile-container");
+        const editProfileBtn = document.createElement("button");
+        editProfileBtn.textContent = "Edit profile";
+        editProfileBtn.id = "edit-profile-btn";
+        editProfileBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                if (!e.target.classList.contains("hidden-edit-btn")) {
+                        // let mc = document.querySelector(".content-1");
+                        let html = document.querySelector("body");
+                        html.classList.add("disabled");
+
+                        let mainContent = document.querySelector("#content-1");
+                        mainContent.classList.add("disabled");
+
+                        let sideMenu = document.querySelector("#sidebar_menu");
+                        sideMenu.classList.add("disabled");
+                        editProfileContainer.classList.remove("hidden");
+                        const cancelButton = document.querySelector("#cancel-edit-btn");
+                        cancelButton.addEventListener('click', () => {
+                                editProfileContainer.classList.add("hidden");
+
+                                html.classList.remove("disabled");
+                                mainContent.classList.remove("disabled");
+                                sideMenu.classList.remove("disabled");
+                        })
+                        const username = localStorage.getItem("username");
+                        setAutnBio();
+                        const updateBioBtn =
+                                document.querySelector("#update-bio-btn");
+                        const bioInput = document.querySelector("#bio");
+                        const profileImageInput =
+                                document.querySelector("#profile-img-input");
+
+                        profileImageInput.addEventListener("change", displayUploadedImge)
+                        updateBioBtn.addEventListener("click", updateBio);
+                }
+        });
+        return editProfileBtn;
 }

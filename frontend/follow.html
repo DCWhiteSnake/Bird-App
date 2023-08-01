@@ -43,47 +43,49 @@
                 <div class="row mx-2">
                         <div id="sidebar_menu" class="col-2 small-12 text-center-sm side">
                                 <nav class="bd-sidebar">
-                                    <p class="mt-2">
-                                        <a class="navbar-brand px-3" href="#">
-                                            <i class="fa-brands fa-earlybirds" id="logo"></i>
-                                        </a>
-                                    </p>
-                
-                                    <div class="nav-opts">
-                                        <a class="px-3" href="/">
-                                            <i class="fa-solid fa-house nav-icon"></i>
-                                            <span class="nav-link-txt">Home</span>
-                                        </a>
-                                    </div>
-                                    <div class="nav-opts">
-                                        <a class="px-3" href="/profile.html?username=" id="profile-link">
-                                            <i class="fa-solid fa-user nav-icon"></i>
-                                            <span class="nav-link-txt">Profile</span>
-                                        </a>
-                                    </div>
-                                    <div class="nav-opts">
-                                        <div class="px-3">
-                                            <span id="more-btn">...</span>
-                                            <span class="nav-link-txt">
-                                                More
-                                            </span>
+                                        <p class="mt-2">
+                                                <a class="navbar-brand px-3" href="#">
+                                                        <i class="fa-brands fa-earlybirds" id="logo"></i>
+                                                </a>
+                                        </p>
+
+                                        <div class="nav-opts">
+                                                <a class="px-3" href="/">
+                                                        <i class="fa-solid fa-house nav-icon"></i>
+                                                        <span class="nav-link-txt">Home</span>
+                                                </a>
                                         </div>
-                                    </div>
-                
-                                    <button class="btn btn-primary mb-3 mt-3" id="logout_btn" type="button">Logout</button>
-                
-                                    <div class="mx-3">
-                                        <p class="name username-black" id="username"></p>
-                                        <p class="name username-grey" id="name"></p>
-                                        <div id="default-img-container" class="profile-img-container-sm">
-                                            <i class="fa-solid fa-user" class="default-profile-img"></i>
+                                        <div class="nav-opts">
+                                                <a class="px-3" href="/profile.html?username=" id="profile-link">
+                                                        <i class="fa-solid fa-user nav-icon"></i>
+                                                        <span class="nav-link-txt">Profile</span>
+                                                </a>
                                         </div>
-                                        <div class="profile-img-container-nav" id="profile-img-container">
-                                            <img id="nav-profile-img" class="profile-img" alt="profile image">
+                                        <div class="nav-opts">
+                                                <div class="px-3">
+                                                        <span id="more-btn">...</span>
+                                                        <span class="nav-link-txt">
+                                                                More
+                                                        </span>
+                                                </div>
                                         </div>
-                                    </div>
+
+                                        <button class="btn btn-primary mb-3 mt-3" id="logout_btn"
+                                                type="button">Logout</button>
+
+                                        <div class="mx-3">
+                                                <p class="name username-black" id="username"></p>
+                                                <p class="name username-grey" id="name"></p>
+                                                <div id="default-img-container" class="profile-img-container-sm">
+                                                        <i class="fa-solid fa-user" class="default-profile-img"></i>
+                                                </div>
+                                                <div class="profile-img-container-nav" id="profile-img-container">
+                                                        <img id="nav-profile-img" class="profile-img"
+                                                                alt="profile image">
+                                                </div>
+                                        </div>
                                 </nav>
-                            </div>
+                        </div>
                         <div id="main-feed" class="col-6">
                                 <div class="row opt-select-container">
                                         <div class="col-6 text-center">
@@ -108,24 +110,26 @@
                         </div>
                         <div class="col-4 trends-etc">
                                 <div id="follow_div">
-                                        <form id="follow_user_form">
-                                                <div class="col-auto">
-                                                        <label class="visually-hidden" for="f_username">Username</label>
+                                        <div>
+                                                <div id="profiles-container" class="col-auto my-2">
+                                                        <label class="visually-hidden"
+                                                                for="search_username">Username</label>
                                                         <div class="input-group">
                                                                 <div class="input-group-text">@</div>
-                                                                <input type="text" class="form-control" id="f_username"
-                                                                        placeholder="Username">
+                                                                <input type="text" class="form-control"
+                                                                        id="search_username" placeholder="Username">
                                                         </div>
                                                 </div>
-                                                <div class="col-auto">
-                                                        <button type="submit" class="btn btn-primary">Follow</button>
+                                                <div id="mini-profiles-container" class="col-auto hidden">
                                                 </div>
-                                        </form>
-                                </div>
-                                <div id="trends_section">
-                                        <h2>
-                                                Trends for you
-                                        </h2>
+                                        </div>
+
+
+                                        <div id="trends_section">
+                                                <h2>
+                                                        Trends for you
+                                                </h2>
+                                        </div>
                                 </div>
                         </div>
                 </div>

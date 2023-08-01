@@ -28,13 +28,13 @@ def broadcast_tweet(data):
 
     #Queue declaration is idempotent, so tweets will be stored chronologically under
     #a queue named user_id
-    channel.queue_declare(receiver_id)
+    channel.queue_declare(receiver_id, durable=True)
     channel.basic_publish(exchange='',
                           routing_key = receiver_id,
-                          body= str(body))
+                          body= str(body), mandatory= True)
     sio.emit('message_stored', {'response': 'Successful'})
     print(f'message: {body.tweet}\nfor:{receiver_id} stored successfully\n')
-    connection.close()
+    # connection.close()
 
 @sio.event
 def disconnect():

@@ -30,9 +30,9 @@
     <script src="js/routes.js  "></script>
     <script src="js/authhelpers.js"></script>
     <script src="js/auth.js"></script>
-    <script src="js/index.js"></script>
     <script src="js/profile.js"></script>
     <script src="js/user.js"></script>
+    <script src="js/index.js"></script>
     <title>Home</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -100,36 +100,13 @@
                             </div>
                             <div class="gen-img-container">
                                 <div class="banner-img default-banner-img"></div>
-                                <div id="default-profile-icon" class="profile-img-container">
-                                    <?xml version="1.0" standalone="no"?>
-                                    <!DOCTYPE svg
-                                        PUBLIC "-//W3C//DTD SVG 20010904//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
-                                    <svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="403.000000pt"
-                                        height="367.000000pt" viewBox="0 0 403.000000 367.000000"
-                                        preserveAspectRatio="xMidYMid meet">
-
-                                        <g transform="translate(0.000000,367.000000) scale(0.100000,-0.100000)"
-                                            fill="#000000" stroke="none">
-                                            <path d="M1722 3270 c-40 -5 -119 -21 -175 -35 -569 -144 -997 -598 -1114
-                                    -1182 -24 -123 -24 -423 0 -546 124 -618 585 -1079 1204 -1204 133 -27 433
-                                    -24 566 5 482 106 859 402 1062 836 413 879 -111 1916 -1064 2107 -112 22
-                                    -370 32 -479 19z m458 -219 c122 -27 202 -56 312 -111 358 -179 608 -507 694
-                                    -911 25 -119 25 -382 0 -499 -33 -152 -87 -292 -166 -428 l-31 -53 -72 66
-                                    c-186 171 -433 297 -698 357 -90 20 -131 23 -309 23 -178 0 -219 -3 -309 -23
-                                    -281 -63 -525 -192 -723 -380 l-46 -44 -31 53 c-80 138 -134 277 -167 429 -26
-                                    119 -26 381 0 500 26 122 61 222 116 332 191 382 562 647 992 708 96 14 340 3
-                                    438 -19z" />
-                                            <path d="M1780 2864 c-266 -57 -470 -311 -470 -584 0 -324 276 -600 600 -600
-                                    276 0 528 205 585 475 43 204 -16 397 -164 546 -149 149 -347 207 -551 163z" />
-                                        </g>
-                                    </svg>
-
-                                </div>
                                 <div class="profile-img-container">
                                     <img id="profile-img-lg" alt="profile image">
                                 </div>
                             </div>
-                            <button type="button" class="px-3 py-2" id="edit-profile-btn">Edit profile</button>
+                            <div id="opt-container"  class="px-3 py-2">
+                                <!-- <button type="button" id="edit-profile-btn">Edit profile</button> -->
+                            </div>
                             <div class="profile-ex">
                                 <p id="name-p"></p>
                                 <p id="username-p"></p>
@@ -164,25 +141,28 @@
                     </div>
                     <div class="col-4 trends-etc">
                         <div id="follow_div">
-                            <form id="follow_user_form">
-                                <div class="col-auto my-2">
-                                    <label class="visually-hidden" for="f_username">Username</label>
-                                    <div class="input-group">
-                                        <div class="input-group-text">@</div>
-                                        <input type="text" class="form-control" id="f_username" placeholder="Username">
-                                    </div>
+                                <div>
+                                        <div id="profiles-container" class="col-auto my-2">
+                                                <label class="visually-hidden"
+                                                        for="search_username">Username</label>
+                                                <div class="input-group">
+                                                        <div class="input-group-text">@</div>
+                                                        <input type="text" class="form-control"
+                                                                id="search_username" placeholder="Username">
+                                                </div>
+                                        </div>
+                                        <div id="mini-profiles-container" class="col-auto hidden">
+                                        </div>
                                 </div>
-                                <div class="col-auto">
-                                    <button type="submit" class="btn btn-primary">Follow</button>
+
+
+                                <div id="trends_section">
+                                        <h2>
+                                                Trends for you
+                                        </h2>
                                 </div>
-                            </form>
                         </div>
-                        <div id="trends_section">
-                            <h2>
-                                Trends for you
-                            </h2>
-                        </div>
-                    </div>
+                </div>
                 </div>
             </div>
         </div>

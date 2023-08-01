@@ -1,10 +1,7 @@
 let db;
-
 // Display previously stored tweets 👉 Get tweets from Server 👉 store in IndexDb 👉 display the new tweet/s
 document.addEventListener("DOMContentLoaded", async () => {
     path = window.location.pathname;
-    document.querySelector("#follow_user_form").addEventListener('submit', follow)
-
     if (path == "/") {
 
         let jwt = localStorage.getItem("jwt");
@@ -66,9 +63,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                         // Well store the time, tweet and sender username in the db    
                         console.log("Database setup complete");
                     });
-
-
-
                 // After we are sure that the login is succesful then start communication with the server
                 // const socket = io("http://localhost:5000");
                 const socket = io.connect('http://localhost:5000',
@@ -82,7 +76,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     jwt = localStorage.getItem("jwt");
                     socket.emit("x-access-token", jwt);
                     console.log("Client: {token}");
-                   
+
                 });
                 socket.on('username', msg => {
                     console.log("Server: " + msg);
@@ -117,7 +111,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             else {
                 localStorage.setItem("jwt", "");
                 localStorage.setItem("username", "");
-                localStorage.setItem("Email", "");
+                localStorage.setItem("email", "");
                 setTimeout(() => {
                     window.location.href = loginAddress;
                 }, 3000);
@@ -125,8 +119,21 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
     else {
-        populateNav();
+        const tokenIsValid = await CheckIfJWTIsValid(localStorage.getItem("jwt"));
+        if (tokenIsValid) {
+            populateNav();
+        }
+        else {
+            localStorage.setItem("jwt", "");
+            localStorage.setItem("username", "");
+            localStorage.setItem("email", "");
+            setTimeout(() => {
+                window.location.href = loginAddress;
+            }, 3000);
+        }
     }
+
+    document.querySelector("#search_username").addEventListener("input", createMiniProfileList);
     /**
      * Populates the nav-bar the user to the current username.
      *@returns: nothing
@@ -235,68 +242,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                 addTweetToDOM(newTweetBlock);
             })
     }
-    function follow(event) {
-        event.preventDefault();
-        let jwt = localStorage.getItem("jwt");
-        let form = document.querySelector("#follow_user_form");
-        let username = document.querySelector("#f_username").value;
-        if (jwt != null && username != null) {
-            fetch(followUserRoute + `?username=${username}`, {
-                method: 'POST',
-                headers: { 'x-access-token': jwt },
-                body: new FormData(form)
-            })
-                .then(response => {
-                    if (response.ok) {
-                        // Show the user that the tweets were sent successfully,
-                        data = response.json();
-                        return data;
-                    }
-                })
-                .then(data => {
-                    errorMessage = data["message"]["FollowError"]
-                    successMessage = data["message"]["Success"]
-                    if (errorMessage) {
-                        let u_div = document.createElement('div');
-                        let u_p = document.createElement('p');
-                        u_div.id = "unsuccessful_follow_div";
-                        u_p.id = "unsuccessful_follow_p";
-                        u_p.textContent = errorMessage;
-                        u_div.appendChild(u_p);
-                        let follow_div = document.querySelector("#follow_div")
-                        follow_div.appendChild(u_div);
-
-                        setTimeout(() => {
-                            u_div.style.display = "none";
-                        }, 3000);
-                    }
-                    else if (successMessage) {
-                        // display the successfully created message
-                        let s_div = document.createElement('div');
-                        let s_p = document.createElement('p');
-                        s_div.id = "successful_follow_div";
-                        s_p.id = "successful_follow_p";
-                        s_p.textContent = successMessage;
-                        s_div.appendChild(s_p);
-                        let follow_div = document.querySelector("#follow_div")
-                        follow_div.appendChild(s_div);
-
-                        setTimeout(() => {
-                            s_div.style.display = "none";
-                        }, 3000);
-                    }
-                    else {
-                        throw new Error(`Sorry, can't follow users at this time \nError: ${error.message}`);
-                    }
-                    console.log(data);
-
-                })
-                .catch((error) => {
-                    console.log(error.message);
-                });
-        }
-    }
-
 });
 
 /**
@@ -317,11 +262,11 @@ function addTweetToDOM(tweetBlock) {
  * Given tweet creation time in MYSQL datetime
  * format, convert the string to simple adverbs relative
  * to when the tweet is viewed by the follower ie.,
- * "now", "1 week " etc.,
+ * "now", "1 week " etc.
  * 
- *@returns {{String}} Adverb describing the time the tweet was 
-    *created relative to the current time
-    */
+ *@returns {{String}} An adverb describing the time the tweet was 
+ *created relative to the current time
+ */
 function generateFriendlyTime(datetimeString) {
 
     const now = new Date();
@@ -359,7 +304,6 @@ function generateFriendlyTime(datetimeString) {
         return datetimeString;
     }
 }
-
 function createTweetBlock(tweetDetailsObject) {
 
     const newTweetBlock = document.createElement("div");
@@ -412,4 +356,234 @@ function createTweetBlock(tweetDetailsObject) {
     newTweetBlock.appendChild(etcDetailsContainerGrid);
     newTweetBlock.setAttribute("data-tweet-id", tweetDetailsObject.id);
     return newTweetBlock;
+}
+
+
+/**
+ * createMiniProfileList - Create a minimal divs containing profiles of users
+ * whose usernames or display names are similar to the inputted one.
+ * @returns nothing
+ */
+function createMiniProfileList(e) {
+    try{
+        let parentContainer = document.querySelector("#mini-profiles-container");
+        parentContainer.classList.add("hidden");
+        let miniProfiles = document.querySelectorAll(".mini-profile");
+        miniProfiles.forEach((miniProfile) => {
+            miniProfile.onclick = null;
+            parentContainer.removeChild(miniProfile);
+        });
+    }
+    catch{}
+    getProfiles(e.target.value)
+        .then((userObjects) => {
+            let parentContainer = document.querySelector("#mini-profiles-container");
+            if (userObjects.length == 0) {
+                parentContainer.classList.add("hidden");
+                let miniProfiles = document.querySelectorAll(".mini-profile");
+                miniProfiles.forEach((miniProfile) => {
+                    miniProfile.onclick = null;
+                    parentContainer.removeChild(miniProfile);
+                });
+            }
+            else {
+                userObjects.forEach((userObject) => {
+                    parentContainer.classList.remove("hidden");
+                    parentContainer.classList.add("py-3");
+                    const miniProfileImg = document.createElement("img");
+                    miniProfileImg.classList.add("tweeter-img");
+
+                    miniProfileImg.src = (userObject.profilePhoto == null) ? "img/default_profile.png" : userObject.profilePhoto; 
+                    const miniProfileImgCircularContainer = document.createElement("div");
+                    miniProfileImgCircularContainer.classList.add("tweeter-img-container", "mx-auto");
+                    miniProfileImgCircularContainer.appendChild(miniProfileImg);
+                    const miniProfileImgContainer = document.createElement("div");
+                    miniProfileImgContainer.classList.add("col-3");
+                    miniProfileImgContainer.appendChild(miniProfileImgCircularContainer)
+  
+                    const miniProfileBlackName = document.createElement("p");
+                    miniProfileBlackName.textContent = "@" + userObject.username;
+                    const miniProfileNamesContainer = document.createElement("div");
+                    miniProfileNamesContainer.classList.add("col-9");
+                    miniProfileNamesContainer.appendChild(miniProfileBlackName);
+                   
+                    const miniProfileContainer = document.createElement("div");
+                    miniProfileContainer.classList.add("mini-profile", "col-12", "py-2");
+                    miniProfileContainer.addEventListener('click', (e) => {
+                        window.location.href = profileAddress + userObject.username;
+                    })
+                    miniProfileContainer.classList.add("row");
+                    miniProfileContainer.appendChild(miniProfileImgContainer);
+                    miniProfileContainer.appendChild(miniProfileNamesContainer);
+                    parentContainer.appendChild(miniProfileContainer);
+                });
+            }
+        });
+
+}
+/**
+ * getProfiles - user the fetch api to get user details and then convert to a list of user objects.
+ * @returns {{Promise<array>}} a Promise that resolves to an array of users.
+ */
+function getProfiles(query) {
+    if (query == "") {
+        return Promise.resolve([])
+    }
+    let profileList = [];
+    let defaultPageSize = 3;
+    return fetch(searchProfilesRoute + `?query=${query}&pageSize=${defaultPageSize}`)
+        .then((response) => {
+            if (response.ok) {
+                return response.json();
+            }
+        })
+        .then((responseJson) => {
+            if (responseJson.status == 200) {
+                let rawProfileList = responseJson.message.profiles;
+                rawProfileList.forEach((rProfile) => {
+                    profileList.push(new User(rProfile));
+                });
+                return profileList;
+            }
+            else {
+                return [];
+            }
+
+        })
+        .catch((error) => {
+            console.error(error);
+        })
+        .finally(() => {
+
+        })
+}
+/**
+ * Follow - Give a valid user id, sends a post request to follow the user
+ * @param {{String}} id A valid user id
+ * @returns {{Promise<Array>}} A promise that resolves to true if the follow event is successful and false otherwise.
+ */
+function follow(id) {
+    let jwt = localStorage.getItem("jwt");
+    if (jwt != null) {
+            return fetch(followUserRoute + `?id=${id}`, {
+                    method: 'POST', headers: { 'x-access-token': jwt },
+            })
+                    .then((response) => {
+                            if (response.ok) {
+                                    let responseJson = response.json();
+                                    return responseJson;
+                            }
+                    })
+                    .then((responseJson) => {
+                            let f_status;
+                            if (responseJson.status == 201) {
+                                    f_status = true;
+                            }
+                            else if (responseJson.status == 500) {
+                                    f_status = false;
+                            }
+                            return f_status;
+                    })
+                    .catch((error) => {
+                            console.log(error.message);
+                            f_status = false;
+                            return f_status;
+                    });
+
+    }
+    else {
+            return Promise.resolve(false);
+    }
+}
+
+/**
+* Follow - Give a valid user id, sends a post request to unfollow the user
+* @param {{String}} id A valid user id
+* @returns {{Promise<Array>}} A promise that resolves to true if the unfollow event is successful and false otherwise.
+*/
+function unfollow(id) {
+    let jwt = localStorage.getItem("jwt");
+    if (jwt != null) {
+            return fetch(followUserRoute + `?id=${id}`, {
+                    method: 'DELETE', headers: { 'x-access-token': jwt },
+            })
+                    .then((response) => {
+                            if (response.ok) {
+                                    let responseJson = response.json();
+                                    return responseJson;
+                            }
+                    })
+                    .then((responseJson) => {
+                            let f_status;
+                            if (responseJson.status == 200) {
+                                    f_status = true;
+                            }
+                            else if (responseJson.status == 500) {
+                                    f_status = false;
+                            }
+                            return f_status
+                    })
+                    .catch((error) => {
+                            console.log(error.message);
+                            f_status = false;
+                    });
+
+    }
+    else {
+            return Promise.resolve(false);
+    }
+}
+
+/**
+* createunfollowBtn - Create a styled html button element for unfollowing
+* a user.
+* @param {*} user the user to unfollow.
+* @returns {{HTMLButtonElement}} A styled html button element
+*/
+function createunfollowBtn(user) {
+    const unfollowBtn = document.createElement("button");
+    unfollowBtn.type = "button";
+    unfollowBtn.setAttribute("data-id", user.id);
+    unfollowBtn.textContent = "Following";
+    unfollowBtn.classList.add("following-btn");
+    unfollowBtn.addEventListener("mouseover", () => {
+            unfollowBtn.textContent = "Unfollow";
+            unfollowBtn.classList.remove("following-btn");
+            unfollowBtn.classList.add("unfollow-btn");
+    });
+    unfollowBtn.addEventListener("mouseout", () => {
+            unfollowBtn.textContent = "Following";
+            unfollowBtn.classList.remove("unfollow-btn");
+            unfollowBtn.classList.add("following-btn");
+    });
+    return unfollowBtn;
+}
+
+/**
+* createFollowBtn - Create a styled html button element for following
+* a user
+* @param {*} user the user to follow
+* @returns A styled html button element
+*/
+function createFollowBtn(user) {
+    const followBtn = document.createElement("button");
+    followBtn.type = "button";
+    followBtn.setAttribute("user-id", user.id);
+    followBtn.classList.add("follow-btn");
+    followBtn.textContent = "Follow";
+    return followBtn;
+}
+/**
+ * createOptBtn - Create a html button element whose function is to show options on accounts
+ * @returns A styled html button element
+ */
+function createOptBtn() {
+    const optSpan = document.createElement("span");
+    optSpan.classList.add("opt-span");
+    optSpan.textContent = "...";
+    const optBtn = document.createElement("button");
+    optBtn.classList.add("opt-btn", "mx-1");
+    optBtn.type = "button";
+    optBtn.appendChild(optSpan);
+    return optBtn;
 }

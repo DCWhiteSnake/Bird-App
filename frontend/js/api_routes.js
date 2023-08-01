@@ -4,7 +4,9 @@ let registrationRoute = baseRoute + "register";
 let testNameRoute = baseRoute +  "username";
 let challengeLoginRoute = baseRoute + "challenge_login";
 let sendTweetRoute = baseRoute + "tweet";
-let followUserRoute = baseRoute + "users/follow";
+let followUserRoute = baseRoute + "user/follow";
 let bioRoute = baseRoute + "user/profile?username=";
 let myTweetsRoute = baseRoute + "user/tweets";
-let profileImgRoute = baseRoute + "user/profile/image?username="
+let profileImgRoute = baseRoute + "user/profile/image?username=";
+let searchProfilesRoute = baseRoute + "user/profile/search_profile";
+let checkFollowingRoute = baseRoute + "user/u_follow";

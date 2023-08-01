@@ -11,7 +11,7 @@ from cs50 import SQL
 from models.user import User
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime, timezone, timedelta
-from helpers import token_required
+from helpers import token_required, get_current_user
 import jwt, pika, os, json, utilities, uuid, logging
 from PIL import Image, UnidentifiedImageError
 from models.tweet import tweet
@@ -171,6 +171,7 @@ def get_tweets(data):
     
         tweets = f"{body.decode('utf-8')}"
         sio.emit(f"tweets", {"tweets":tweets, "token":receiver_id})
+        channel.queue_delete(queue=receiver_id, if_empty=True)
     
     if data["jwt"]:
         token = data["jwt"]
@@ -185,7 +186,6 @@ def get_tweets(data):
             channel = connection.channel()
 
         try:
-            channel.queue_declare(queue=receiver_id)
             channel.basic_consume(queue=receiver_id,
                                       auto_ack=True,
                                       on_message_callback=callback)
@@ -197,37 +197,36 @@ def get_tweets(data):
 
 # Follow - Unfollow
 
-
-@app.route("/api/users/follow", methods=["POST"])
+@app.route("/api/user/follow", methods=["POST", "DELETE"])
 @token_required
 def follow_user(current_user):
-    username = request.args.get('username')
-    id = current_user.id
+    op_user_id = request.args.get('id')
+    auth_user_id = current_user.id
     # check if the user already follows 'username'
     # if so then just pass successful else create the link.
-    if not username:
-        return jsonify(message={"FollowError": "username is required"}, status=400)
-    elif username == current_user.username:
-        return jsonify(message={"FollowError": "You cannot follow yourself"}, status=400)
-    
-    # Check if user already follows
-    # if so, just send that the following was successful
-    follower_row = db.execute("SELECT l1.follower_id FROM links \
-            JOIN users u1 ON u1.username = ? \
-            JOIN users u2 ON u2.id = ? \
-            JOIN links l1 ON l1.follower_id = u2.id AND l1.leader_id = u1.id", username, id)
-    if len(follower_row) == 1:
-        return jsonify(message={"Success": f"Already following @{username}"}, status=200)
-    else:
-        leader_id_rows = db.execute(
-            "SELECT u1.id FROM users u1 WHERE u1.username = ?", username)
-        if not leader_id_rows:
-            return jsonify(message={"FollowError": f"The user @{username} does not exist"}, status=400)
-        l_id = leader_id_rows[0]["id"]
-        _ = db.execute("INSERT INTO links(id, leader_id, follower_id, time)  VALUES(?,?,?,?)", str(
-            uuid.uuid4), l_id, id, utilities.current_time())
-        return jsonify(message={"Success": f"Successfully followed @{username}"}, status=201)
+    if not op_user_id:
+        return jsonify(message={"Follow Error": "username is required"}, status=400)
+    elif op_user_id == auth_user_id:
+        return jsonify(message={"Follow Error": "You cannot follow yourself"}, status=400)
+    if request.method == "POST":
+        # Check if user already follows
+        # if so, just send that the following was successful
+        try:
+            _ = db.execute("INSERT INTO links(id, leader_id, follower_id, time)  VALUES(?,?,?,?)", str(
+                uuid.uuid4), op_user_id, auth_user_id, utilities.current_time())
+            return jsonify(message={"Success": f"Successfully followed @{username}"}, status=201)
+        except:
+            return jsonify(message={"Internal Server Error": "Cannot follow users at this time"}, status=500)
+    elif request.method == "DELETE":
+        try:
+            _ = db.execute("DELETE FROM links WHERE leader_id = ? AND follower_id = ?",op_user_id, auth_user_id)
+            return jsonify(message={"Success": f"Successfully followed @{username}"}, status=200)
+        except:
+            return jsonify(message={"Internal Server Error": "Cannot follow users at this time"}, status=500)
+
 # end follow
+
+
 
 # profile
 @app.route("/api/user/profile", methods=["GET", "PATCH"])
@@ -335,6 +334,15 @@ def handle_bio():
         else:
             return jsonify(message={"Bio-Update-Error": "Bad Request"}, status = 400)
 
+@app.route("/api/user/profile/search_profile", methods=["GET"])
+def search_profiles():
+    query = request.args["query"]
+    page_size = int(request.args["pageSize"])
+    query = "%" + query + "%"
+    profile_rows = db.execute("SELECT * FROM users WHERE username LIKE ? LIMIT ?", query, page_size)
+    profile_rows = [row for row in profile_rows]
+    return jsonify(message = {"profiles": profile_rows}, status=200)
+                
 @app.route("/api/user/tweets", methods=["GET", "DELETE"])
 def handle_user_tweets():
     if request.method == "GET":
@@ -343,7 +351,10 @@ def handle_user_tweets():
         request_username = request.args["username"]
         try:
 
-            tweet_db_rows  = db.execute("SELECT article as tweet, users.id as receiver_id, time, tweets.id as id FROM tweets JOIN users on users.id = tweets.sender_id AND users.username = ? ORDER BY time DESC LIMIT ? OFFSET ? ", request_username, 3, 3 * page)
+            tweet_db_rows  = db.execute("SELECT article as tweet, users.id \
+                                        as receiver_id, time, tweets.id as id FROM tweets JOIN users \
+                                        on users.id = tweets.sender_id AND users.username = ?\
+                                         ORDER BY time DESC LIMIT ? OFFSET ? ", request_username, 3, 3 * page)
             if len(tweet_db_rows) > 0:
                 tweet_rows = [tweet(t["tweet"], t["receiver_id"], request_username, t["time"], t["id"]) for t in tweet_db_rows]
                 #tweets_json = json.dumps(tweet_rows)
@@ -374,8 +385,26 @@ def get_ImageLink():
                 return jsonify(message=str(e), status = 500)
     else:
         return jsonify(message="Bad Request",  status = 404)
+    
+@app.route("/api/user/u_follow", methods=["GET"])
+@token_required
+def checkIffollowing(current_user):
+    try:
+        user_to_check = request.args["username"]
+        db_user_row = db.execute("SELECT id FROM users WHERE username = ?", user_to_check)
+        if not db_user_row:
+            raise
+        else:
+            link_row = db.execute("SELECT leader_id FROM links WHERE leader_id = ? AND follower_id = ?", db_user_row[0]["id"], current_user.id)
+            if link_row:
+                return jsonify(message={"u_follow":True}, status=200)
+            else:
+                return jsonify(message={"u_follow":False}, status=200)
+            
+    except:
+        return jsonify(message={"u_follow":False}, status=200)
+           
 # end profile
-
 
 @app.route("/api/user/followers", methods=["GET"])
 def handle_user_followers():
@@ -384,20 +413,31 @@ def handle_user_followers():
         page = int(request.args["pageNumber"])
         request_username = request.args["username"]
         try:
-
-            follower_rows  = db.execute("SELECT u1.username, u1.bio, u1.profile_photo, u1.id as id FROM links l1 \
+            follower_rows  = db.execute("SELECT u1.username, u1.bio, u1.profile_photo, u1.id as\
+                                         id FROM links l1 \
                                         JOIN users u1 ON u1.id = l1.follower_id \
                                         JOIN users u2 on u2.id = l1.leader_id and u2.username= ? \
-                                        ORDER BY l1.time ASC LIMIT ? OFFSET ?", request_username, page_size, page_size * page)
+                                        ORDER BY l1.time ASC LIMIT ? OFFSET ?", request_username,
+                                          page_size, page_size * page)
             if len(follower_rows) > 0:
-                follower_rows = [User(bio = followers["bio"], username = followers["username"],
-                                    profile_photo = followers["profile_photo"], id = followers["id"], email = "", phone_no = "",
-                                    password_hash = "", creation_date = "", follower_count = "", following_count = "", confirmed = "",
-                                    cash = "", tweets_count = "") for followers in follower_rows]
-                followers_json = [str(userObject) for userObject in follower_rows]
-                return jsonify(message={"followers": followers_json}, status = 200)
+                follower_rows = [User(bio=following["bio"], username= following["username"],
+                                      profile_photo= following["profile_photo"], id = following["id"],
+                                      email = "", phone_no = "", password_hash = "", creation_date = "",
+                                      follower_count = "", following_count = "", confirmed = "", cash = "",
+                                      tweets_count="") for following in follower_rows]
+                follower_json = [str(userObject) for userObject in follower_rows]
+                if ("x-access-token" in request.headers):
+                    try:
+                        auth_user_id = get_current_user(request.headers["x-access-token"]).id
+                        contextual_links_dict = generate_contextual_links_dict(follower_rows, auth_user_id)
+                        return jsonify(message={"followers": follower_json,
+                                                 "contextual_links_dict": contextual_links_dict},
+                                        status = 200)
+                    except:
+                        return jsonify(message={"followers": follower_json, "contextual_links_dict": {}},
+                                        status = 200)
             else:
-                return jsonify(message={"followers": []}, status=200)
+                return jsonify(message={"followers": [], "contextual_links_dict": {}}, status=200)
         except:
             return jsonify(message={"Bad Request": "This user doesn't exist"}, status=404)
 
@@ -409,18 +449,33 @@ def handle_user_following():
         request_username = request.args["username"]
         try:
 
-            following_rows  = db.execute("SELECT u1.username, u1.bio, u1.profile_photo, u1.id as id FROM links l1 JOIN users u1 ON u1.id = l1.leader_id JOIN\
-                                         users u2 on u2.id = l1.follower_id and u2.username= ? LIMIT ? OFFSET ?", request_username, page_size, 3 * page)
+            following_rows  = db.execute("SELECT u1.username, u1.bio, u1.profile_photo, u1.id as id \
+                                         FROM links l1 JOIN users u1 ON u1.id = l1.leader_id JOIN\
+                                         users u2 on u2.id = l1.follower_id and u2.username= ? LIMIT ? \
+                                         OFFSET ?", request_username, page_size, 3 * page)
             if len(following_rows) > 0:
                 following_rows = [User(bio=following["bio"], username= following["username"],
-                                      profile_photo= following["profile_photo"], id = following["id"], email = "", phone_no = "", password_hash = "", creation_date = "",
-                                        follower_count = "", following_count = "", confirmed = "", cash = "", tweets_count="") for following in following_rows]
+                                      profile_photo= following["profile_photo"], id = following["id"],
+                                      email = "", phone_no = "", password_hash = "", creation_date = "",
+                                      follower_count = "", following_count = "", confirmed = "", cash = "",
+                                      tweets_count="") for following in following_rows]
                 following_json = [str(userObject) for userObject in following_rows]
-                return jsonify(message={"following": following_json}, status = 200)
+                if ("x-access-token" in request.headers):
+                    try:
+                        auth_user_id = get_current_user(request.headers["x-access-token"]).id
+                        contextual_links_dict = generate_contextual_links_dict(following_rows, auth_user_id)
+                        return jsonify(message={"following": following_json,
+                                                 "contextual_links_dict": contextual_links_dict},
+                                        status = 200)
+                    except:
+                        return jsonify(message={"following": following_json, "contextual_links_dict": {}},
+                                        status = 200)
             else:
-                return jsonify(message={"following": []}, status=200)
+                return jsonify(message={"following": [], "contextual_links_dict": {}}, status=200)
         except:
             return jsonify(message={"Bad Request": "This user doesn't exist"}, status=404)
+
+
 # end profile
 
 # Sockets
@@ -457,3 +512,27 @@ def handle_client_message():
     client_add = request.remote_addr  + ":" + str(request.environ['REMOTE_PORT'])
     print(f"Client: {client_add} has disconnected disconnected")
 # end sockets
+
+# Helpers
+def generate_contextual_links_dict(f_rows, auth_user_id) -> dict:
+    ''' 
+        For each paginated user that follows the current user (not authenticated)
+        create a dictionary that maps that user's id to a dictionary of follows_u,
+        and u_follow. These keys in the nested dictionary serve as an indicator for the frontend
+        to display contextual elements like, following buttons, 
+        follow button, unfollow button.
+    '''
+    contextual_links_dict = {}
+    for user_object in f_rows:
+        try:
+            follows_u = bool(db.execute("SELECT id from links WHERE leader_id = ? \
+                                        and follower_id = ?", auth_user_id, user_object.id))
+        except:
+            follows_u = False
+        try:
+            u_follow = bool(db.execute("SELECT id from links WHERE leader_id = ? \
+                                    and follower_id = ?", user_object.id, auth_user_id))
+        except:
+            u_follow = False
+        contextual_links_dict[user_object.id] = {"follows_u": follows_u, "u_follow": u_follow}
+    return contextual_links_dict

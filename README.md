@@ -8,15 +8,12 @@ This is a twitter like social media web app.
   Added an architecture diagram [Architecture Diagram](https://github.com/DCWhiteSnake/Bird-App/blob/main/Architecture.png "Architecture diagram") 
 - Flask - The backend
 - Socket.io - For a persistent communication channel between the client and server. Socket.io is an extension of Websockets technology
-- Gunicorn - Reverse proxy
-- Eventlet - Worker
+- Gunicorn - HTTP server
+- Eventlet - Worker class
 - js - The front-end
-- Bootstrap - For styling similar to twitter's UI.
+- Bootstrap - For styling
 - Python 3.9.16
-
-## Features Documentation
-[features docs](https://docs.google.com/document/d/1RQ72CZiRPJc57sB8Fo55bvQZwyeNnT3A826h4QdkBfc/edit?usp=sharing "Features to be implemented")
-
+- 
 ## Steps to test locally
 ### Automatic
 - create a database called bird_app_db

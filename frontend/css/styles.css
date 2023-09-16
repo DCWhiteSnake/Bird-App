@@ -181,26 +181,17 @@ label[for*="profile-img-input"] {
     background-color: #00000044;
 }
 
-.following-special{
+.opt-content{
     position: relative;
     bottom: 60px;
    
 }
-.following-special-left{
+.opt-content-left{
     left: 75%;
 }
 
 #edit-profile-btn{
-    font-weight: 700;
-    font-size: 18px;
-    margin-top: 10px;
-    position: relative;
-    border-radius: 20px;
-    border: 1px solid #d0cfcf77;
-    margin-bottom: 10px;
-    bottom: 60px;
-    width: max-content;
-    margin-left: 75%;
+    font-size: 5px;
     background-color: #ffffff;
 }
 
@@ -559,10 +550,10 @@ div.profile-node:hover {
     border: 1px solid #ee7676;
     color: #ff4343;
 }
-.following-btn, .unfollow-btn{
+.following-btn, .unfollow-btn, #edit-profile-btn{
     width: 100px;
 }
-.following-btn, .unfollow-btn, .follow-btn {
+.following-btn, .unfollow-btn, .follow-btn, #edit-profile-btn{
     font-weight: 600;
     padding: 5px 10px;
     text-align: center;
@@ -740,7 +731,7 @@ div#following-link-container:hover {
         bottom: 75px;
     }
 
-    #edit-profile-btn {
+    /* #edit-profile-btn {
         font-weight: 700;
         font-size: 18px;
         margin-top: 10px;
@@ -751,7 +742,7 @@ div#following-link-container:hover {
         bottom: 120px;
         right: 30px;
 
-    }
+    } */
 
     .tweet-block span {
         text-align: right;

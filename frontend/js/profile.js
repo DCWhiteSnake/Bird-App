@@ -15,11 +15,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 // fetches the first 10 tweets and displays to the user.
                 getMyTweets(pageNumber, username);
 
+                let maxScroll = 200;
                 // every time the user scrolls, fetch the next 10 tweets
                 tweetFeedDiv.addEventListener("scroll", () => {
-                        if (!killGettingTweets) {
+                        let currentScrollValue = tweetFeedDiv.scrollTop;
+                        if (!killGettingTweets && (currentScrollValue > maxScroll)) {
                                 getMyTweets(++pageNumber, username);
                         }
+                        maxScroll = (tweetFeedDiv.scrollTop > maxScroll)?
+                       (tweetFeedDiv.scrollTop + 200) : maxScroll;
                 })
 
                 getBio(username)
@@ -35,13 +39,12 @@ document.addEventListener("DOMContentLoaded", () => {
                                 let target_list = [];
                                 const optContainer = document.querySelector("#opt-container");
                                 const optBtn = createOptBtn();
-                                optBtn.classList.add("following-special");
+                                optBtn.classList.add("opt-content", "opt-content-left");
                                 if (user.username != localStorage.getItem("username")) {
                                         checkIfFollowing(username)
                                                 .then((u_follow) => {
-                                                        optBtn.classList.add("following-special-left");
                                                         const unfollowBtn = createunfollowBtn(user, target_list);
-                                                        unfollowBtn.classList.add("following-special", "following-special-left");
+                                                        unfollowBtn.classList.add("opt-content", "opt-content-left");
                                                         unfollowBtn.addEventListener("click", (e) => {
                                                                 target_list.push("uf-btn");
                                                                 unfollow(e.target.getAttribute("data-id"))
@@ -53,7 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                                                         });
                                                         });
                                                         const followBtn = createFollowBtn(user);
-                                                        followBtn.classList.add("following-special", "following-special-left");
+                                                        followBtn.classList.add("opt-content", "opt-content-left");
                                                         followBtn.addEventListener("click", (e) => {
                                                                 target_list.push("f-btn");
                                                                 follow(e.target.getAttribute("user-id"))
@@ -317,6 +320,7 @@ function createEditProfileBtn() {
         const editProfileBtn = document.createElement("button");
         editProfileBtn.textContent = "Edit profile";
         editProfileBtn.id = "edit-profile-btn";
+        editProfileBtn.classList.add("opt-content","opt-content-left");
         editProfileBtn.addEventListener("click", (e) => {
                 e.preventDefault();
                 if (!e.target.classList.contains("hidden-edit-btn")) {

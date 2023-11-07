@@ -1,5 +1,6 @@
-# Bird-App
-This is a twitter like social media web app.
+# BIRD-APP
+#### Video Demo:  <https://youtu.be/-kU79JXO8AA>
+This is a trivial twitter clone web app.
 ## Tooling
 - MySQL (V8+)
   + You need to create a MYSQL database with the name bird_app_db
